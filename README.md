@@ -15,12 +15,10 @@ Take-home case study response for the GTM Engineer role at [Mento](https://www.m
 ├── 02_data_foundation/             Part 2. Data Foundation Plan
 │   ├── 02_data_foundation.md       Prose answer to brief's four asks
 │   ├── data_model.html             Interactive data model + lifecycle diagram
-│   ├── clay_build/                 Clay table build doc (in progress)
-│   ├── claude_code_plan/           Claude Code approach plan (in progress)
-│   └── code_and_model/             HubSpot-native schema + scaffolder (in progress)
+│   └── clay_build/
+│       └── 02_clay_board_build.md  Three-table Clay board build doc
 ├── 03_signal_workflow/             Part 3. Buying Signal Workflow (in progress)
 │   ├── clay_build/
-│   ├── claude_code_plan/
 │   └── outreach_drafts/
 └── 99_submission/                  Submission index
 ```
