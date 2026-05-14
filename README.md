@@ -29,6 +29,30 @@ Take-home case study response for the GTM Engineer role at [Mento](https://www.m
 
 Once GitHub Pages is enabled on this repo, every artifact is also reachable as a public URL the Mento reviewer can click directly from the Notion submission.
 
+## Claude Code Working Build (Part 3 Companion)
+
+Part 3's signal workflow is implemented as a runnable Python project at [`03_signal_workflow/build/`](./03_signal_workflow/build/). Roughly **65% real working code, 35% mocked**. The mocking is concentrated at external API boundaries (Crunchbase, LinkedIn, HubSpot, Slack, Smartlead). The orchestration logic, scoring, agentic drafting, and audit trail are real and runnable.
+
+### What's Real
+
+Scoring formula, routing tiers, Personalisation Agent (real Claude API), Strong-Hook Gate, Draft Assembly Agent (real Claude API), CLI HITL prompt, JSON audit logging, pytest suite.
+
+### What's Mocked
+
+External API integrations (signal detection, enrichment, HubSpot lookup/write, Slack DM, Smartlead send). Every mock carries a `# STUB:` comment with a note on the production replacement.
+
+### Quick Start
+
+```bash
+cd 03_signal_workflow/build
+cp .env.example .env
+# add your ANTHROPIC_API_KEY
+uv sync
+uv run python -m signal_engine.run --signal funding --company linear
+```
+
+See [`03_signal_workflow/build/README.md`](./03_signal_workflow/build/README.md) for the full working/mocked breakdown and architecture explanation.
+
 ## Reading Order
 
 1. Notion master page (link above) for the reviewer-facing read.
