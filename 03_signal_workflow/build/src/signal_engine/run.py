@@ -5,8 +5,7 @@ Usage:
     uv run python -m signal_engine.run --signal funding --company linear
 
 Walks one signal end to end through detect -> enrich -> score -> route
--> personaliser -> gate -> assembler -> HITL terminal. (Audit logging
-is wired in by Step 9.)
+-> personaliser -> gate -> assembler -> HITL terminal -> audit log.
 
 Direct prints are intentional here — this is the user-facing surface.
 Every other module logs through `logging`.
@@ -17,14 +16,21 @@ from __future__ import annotations
 import argparse
 import logging
 import sys
+from datetime import UTC, datetime
 from typing import Final
 
 from dotenv import load_dotenv
 
-from signal_engine import detector, enricher, gate, personaliser, router, scorer
+from signal_engine import auditor, detector, enricher, gate, personaliser, router, scorer
 from signal_engine.assembler import assemble
 from signal_engine.constants import SMARTLEAD_CAMPAIGNS
-from signal_engine.models import Draft
+from signal_engine.models import (
+    AuditEntry,
+    Draft,
+    GateVerdict,
+    HookCandidate,
+    ScoreBreakdown,
+)
 
 _SIGNAL_CHOICES: Final[list[str]] = ["funding", "exec_hire", "ld_posting", "headcount_growth"]
 _COMPANY_CHOICES: Final[list[str]] = ["linear", "vanta", "ramp", "retool"]
@@ -65,6 +71,9 @@ def main(argv: list[str] | None = None) -> int:
     load_dotenv()
     _configure_logging(verbose=args.verbose)
 
+    started_at = datetime.now(UTC)
+    run_id = started_at.strftime("%Y%m%dT%H%M%SZ")
+
     # --- Stage 1 ---------------------------------------------------------
     print(f"[1/5] Detecting signal: {args.signal} @ {args.company}...")
     signal = detector.detect(args.signal, args.company)
@@ -81,9 +90,18 @@ def main(argv: list[str] | None = None) -> int:
         f"contact={contact.first_name} {contact.last_name} ({contact.title})"
     )
 
+    audit = auditor.new_entry(
+        run_id=run_id,
+        started_at=started_at,
+        signal=signal,
+        company=company,
+        contact=contact,
+    )
+
     # --- Stage 3 ---------------------------------------------------------
     print("[3/5] Scoring...")
     score = scorer.compute(signal, company, contact)
+    _record_score(audit, score)
     print(f"      base_weight       {score.base_weight:.3f}  ({signal.signal_type} signal)")
     print(
         f"      recency_decay     {score.recency_decay:.3f}  "
@@ -98,6 +116,7 @@ def main(argv: list[str] | None = None) -> int:
     # --- Stage 4 ---------------------------------------------------------
     tier = router.assign(score, company)
     channel = router.channel_for(tier)
+    audit.tier = tier
     print(f"[4/5] Routing: {tier}")
     print(f"      # STUB: {channel}")
 
@@ -106,6 +125,7 @@ def main(argv: list[str] | None = None) -> int:
             f"      tier={tier} → no draft generated. "
             "Production would fire Find Contacts at Company or park the lead."
         )
+        _finalise_and_write(audit)
         return 0
 
     # --- Stage 5 ---------------------------------------------------------
@@ -118,6 +138,7 @@ def main(argv: list[str] | None = None) -> int:
     print("      Strong-Hook Gate: evaluating candidates...")
     verdicts = gate.evaluate(candidates, signal, contact)
     chosen = gate.pick_strongest(verdicts)
+    _record_hooks(audit, candidates, verdicts)
     for idx, verdict in enumerate(verdicts, start=1):
         marker = "✓" if verdict.passed else "✗"
         print(f"        [{idx}] {marker} {verdict.reason}")
@@ -125,6 +146,8 @@ def main(argv: list[str] | None = None) -> int:
     if chosen is None:
         print("      All candidates failed gate. Routing to manual review queue.")
         print("      # STUB: would create a ticket in #signal-manual-review")
+        audit.gate_decision = {"passed": False, "reason": "no candidate cleared the gate"}
+        _finalise_and_write(audit)
         return 0
 
     selected_idx = verdicts.index(chosen) + 1
@@ -138,6 +161,13 @@ def main(argv: list[str] | None = None) -> int:
         sdr_signature=args.sdr_signature,
         polish=not args.no_polish,
     )
+    audit.selected_hook = chosen.candidate.text
+    audit.gate_decision = {"passed": True, "reason": chosen.reason}
+    audit.draft = {
+        "subject": draft.subject,
+        "body": draft.body,
+        "template_name": draft.template_name,
+    }
 
     # --- HITL ------------------------------------------------------------
     if args.non_interactive:
@@ -149,6 +179,9 @@ def main(argv: list[str] | None = None) -> int:
 
         decision, final_body = review(draft)
 
+    audit.sdr_decision = decision
+    audit.sdr_edited_body = final_body
+
     campaign = SMARTLEAD_CAMPAIGNS.get(args.signal, "(unknown)")
     if decision == "send":
         print(
@@ -159,10 +192,51 @@ def main(argv: list[str] | None = None) -> int:
         print(
             f"[STUB] Would have sent EDITED body via Smartlead campaign {campaign!r}."
         )
-        _ = final_body  # consumed by Step 9 audit logging
     else:
         print("[STUB] Skipped. Production would decay the signal and capture a reason.")
+
+    _finalise_and_write(audit)
     return 0
+
+
+def _record_score(audit: AuditEntry, score: ScoreBreakdown) -> None:
+    """Copy ScoreBreakdown fields into the audit entry."""
+    audit.score = {
+        "base_weight": score.base_weight,
+        "recency_decay": score.recency_decay,
+        "buyer_proximity": score.buyer_proximity,
+        "signal_score": score.signal_score,
+        "days_since_signal": score.days_since_signal,
+    }
+
+
+def _record_hooks(
+    audit: AuditEntry,
+    candidates: list[HookCandidate],
+    verdicts: list[GateVerdict],
+) -> None:
+    """Capture every hook candidate with its gate verdict for audit."""
+    audit.hook_candidates = [
+        {
+            "text": cand.text,
+            "word_count": cand.word_count,
+            "passed": v.passed,
+            "reason": v.reason,
+            "specificity": v.specificity,
+            "buyer_context": v.buyer_context,
+            "voice_ok": v.voice_ok,
+            "length_ok": v.length_ok,
+            "timeliness": v.timeliness,
+        }
+        for cand, v in zip(candidates, verdicts, strict=True)
+    ]
+
+
+def _finalise_and_write(audit: AuditEntry) -> None:
+    """Stamp completed_at, write the audit JSON, and tell the user where it landed."""
+    audit.completed_at = datetime.now(UTC)
+    path = auditor.write(audit)
+    print(f"[AUDIT] {path}")
 
 
 def _print_draft_noninteractive(draft: Draft) -> None:
