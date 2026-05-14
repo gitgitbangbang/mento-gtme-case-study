@@ -1,0 +1,13 @@
+Subject: first 90 days
+
+Hi {prospect_first_name},
+
+{ai_hook}
+
+Most People execs start a coaching program in months 2-6 of tenure. Coaches are former CHROs and VPs People who've sat in the same first-investment call.
+
+Happy to share what worked at Brex and Gusto.
+
+Worth 20 minutes?
+
+— {sdr_signature}
