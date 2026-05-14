@@ -136,6 +136,14 @@ The draft is a live Claude API output, not a hardcoded string.
 
    That file captures the full trace: signal payload, enrichment data, score breakdown (every multiplier visible), tier, all hook candidates with their gate verdicts, the selected hook, the final draft body, and your Send / Edit / Skip decision. Open it to see what the engine did, in order, with full traceability.
 
+   For terminal-readable rendering, use the audit inspector:
+
+   ```bash
+   uv run python -m signal_engine.inspect_audit --latest
+   # or
+   uv run python -m signal_engine.inspect_audit audit/20260514T131558Z_sig_retool_headcount_2026_04_23.json
+   ```
+
 ### Try the Other Three Signals
 
 Available signals: `funding`, `exec_hire`, `ld_posting`, `headcount_growth`.
