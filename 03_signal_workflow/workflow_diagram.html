@@ -1,0 +1,119 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Mento Buying Signal Workflow</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700&family=Source+Serif+Pro:ital,wght@1,400&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --m-dark:#0e1719; --m-white:#fff; --m-cream:#fbf5ec;
+    --m-text:#27373F; --m-heading:#0e1719; --m-muted:#5c5c5c; --m-soft:#9c9a92;
+    --m-yellow:#FACC15; --m-yellow-soft:#FFF3CC;
+    --m-sage:#7a9082; --m-sage-deep:#637a6f; --m-sage-soft:#bdccbe;
+    --m-coral:#EE7E5D; --m-coral-soft:#FCDAD0;
+    --m-border:#e0dcd0;
+    --font-sans:'Hanken Grotesk',system-ui,-apple-system,sans-serif;
+    --font-serif:'Source Serif Pro',Georgia,serif;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;background:var(--m-white);color:var(--m-text);font-family:var(--font-sans);font-size:16px;line-height:1.6;-webkit-font-smoothing:antialiased;}
+  .topband{background:var(--m-dark);color:#fff;padding:18px 0;}
+  .topband-inner{max-width:1080px;margin:0 auto;padding:0 32px;}
+  .brand{display:flex;align-items:center;gap:10px;font-weight:700;font-size:22px;letter-spacing:-0.5px;color:#fff;}
+  .page{max-width:1040px;margin:0 auto;padding:48px 32px 96px;}
+  .hero{margin-bottom:40px;padding-bottom:24px;border-bottom:1px solid var(--m-border);}
+  h1{font-family:var(--font-sans);font-size:44px;font-weight:700;line-height:1.15;letter-spacing:-1px;color:var(--m-heading);margin:0;}
+  h1 .ital{font-family:var(--font-serif);font-style:italic;font-weight:400;color:var(--m-sage-deep);}
+  h2{font-family:var(--font-sans);font-size:24px;font-weight:600;letter-spacing:-0.3px;color:var(--m-heading);margin:48px 0 8px 0;}
+  h2 .ital{font-family:var(--font-serif);font-style:italic;font-weight:400;color:var(--m-sage-deep);}
+  p.lede{font-size:16px;color:var(--m-muted);margin:0 0 16px 0;max-width:720px;}
+  .badge{display:inline-flex;align-items:center;font-size:11px;font-weight:600;padding:5px 11px;border-radius:99px;background:var(--m-sage-soft);color:#3a4a40;margin-bottom:16px;letter-spacing:0.6px;text-transform:uppercase;}
+  .card{background:var(--m-white);border:1px solid var(--m-border);border-radius:14px;padding:28px;margin-bottom:24px;border-top:3px solid var(--m-sage);overflow:auto;}
+  pre.mermaid{margin:0;background:none;font-family:var(--font-sans);text-align:center;}
+  .legend{display:flex;flex-wrap:wrap;gap:18px;margin-top:20px;padding-top:16px;border-top:1px dashed var(--m-border);font-size:13px;color:var(--m-muted);}
+  .legend-item{display:flex;align-items:center;gap:8px;}
+  .swatch{width:14px;height:14px;border-radius:3px;display:inline-block;border:1.5px solid var(--m-border);}
+  .sw-det{background:var(--m-sage-soft);border-color:var(--m-sage);}
+  .sw-ai{background:var(--m-yellow-soft);border-color:var(--m-yellow);}
+  .sw-hum{background:var(--m-coral-soft);border-color:var(--m-coral);}
+  .sw-sys{background:var(--m-cream);border-color:var(--m-border);}
+  table{width:100%;border-collapse:collapse;font-size:14px;margin-top:16px;}
+  th,td{border:1px solid var(--m-border);padding:10px 14px;text-align:left;vertical-align:top;}
+  th{background:var(--m-cream);font-weight:600;color:var(--m-heading);}
+  td b{color:var(--m-heading);}
+</style>
+</head>
+<body>
+
+<div class="topband">
+  <div class="topband-inner">
+    <div class="brand">
+      <span><svg width="26" height="26" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M4 18 L4 8 L12 14 L20 8 L20 18 Z" fill="#7a9082"/></svg></span>
+      Mento
+    </div>
+  </div>
+</div>
+
+<div class="page">
+  <div class="hero">
+    <h1>Buying Signal <span class="ital">Workflow</span></h1>
+  </div>
+
+  <p class="lede">Four stages, one terminal HITL. Sage = deterministic. Yellow = agentic. Coral = human. Cream = system action triggered by human decision.</p>
+
+  <div class="card">
+    <div class="badge">Workflow diagram</div>
+    <pre class="mermaid">
+flowchart TD
+    Start([Signals poll]):::system
+    Start --> S1
+    S1["1. Monitor"]:::deterministic
+    S1 --> S2["2. Enrich"]:::deterministic
+    S2 --> S3["3. Score"]:::deterministic
+    S3 --> S4["4. Route + Draft"]:::deterministic
+    S4 --> P["Personalisation Agent"]:::agentic
+    P --> G{"Strong-hook gate"}:::agentic
+    G -->|Strong| A["Draft Assembly Agent"]:::agentic
+    G -->|Lite| R["Manual review"]:::system
+    A --> Slack["Slack DM to SDR"]:::system
+    Slack --> H{"SDR HITL"}:::human
+    H -->|Send| Send["Smartlead fires"]:::system
+    H -->|Edit| Edit["Edit then send"]:::system
+    H -->|Skip| Skip["Decay + log"]:::system
+    Skip -.->|feedback| S3
+    classDef deterministic fill:#bdccbe,stroke:#7a9082,stroke-width:2px,color:#0e1719
+    classDef agentic fill:#FFF3CC,stroke:#FACC15,stroke-width:2px,color:#0e1719
+    classDef human fill:#FCDAD0,stroke:#EE7E5D,stroke-width:3px,color:#0e1719
+    classDef system fill:#fbf5ec,stroke:#e0dcd0,stroke-width:1.5px,color:#27373F
+    </pre>
+    <div class="legend">
+      <div class="legend-item"><span class="swatch sw-det"></span>Deterministic logic</div>
+      <div class="legend-item"><span class="swatch sw-ai"></span>Agentic (AI)</div>
+      <div class="legend-item"><span class="swatch sw-hum"></span>Human in the loop</div>
+      <div class="legend-item"><span class="swatch sw-sys"></span>System action</div>
+      <div class="legend-item">Dashed arrow = feedback</div>
+    </div>
+  </div>
+
+  <h2>Stage <span class="ital">Detail</span></h2>
+  <table>
+    <tr><th>Stage</th><th>What It Does</th><th>Tools</th></tr>
+    <tr><td><b>1. Monitor</b></td><td>Poll signal sources on per-type schedules. Write detected events to the Signals table.</td><td>Crunchbase API, LinkedIn (Apify), Greenhouse, Lever, Firecrawl, Clearbit, PDL (all orchestrated in Clay)</td></tr>
+    <tr><td><b>2. Enrich</b></td><td>Lookup Company + Contacts. Cold-start enrichment if new. Pull signal-specific context (funding amount + investors, exec prior role, job description text).</td><td>Clay (Apollo, Ocean.io, Clearbit, ZoomInfo, PDL, Crunchbase, Claygent, Firecrawl)</td></tr>
+    <tr><td><b>3. Score</b></td><td>signal_score = base_weight × recency_decay × ICP_fit. Combined with company.icp_total to assign P1, P2, or P3.</td><td>Clayscript formulas</td></tr>
+    <tr><td><b>4. Route + Draft</b></td><td>Personalisation Agent generates 3 hooks. Strong-hook gate filters weak personalisation. Draft Assembly Agent merges template + hook + Mento voice. Slack DM with pre-populated draft.</td><td>Claude API via Clay Use AI columns, Clay Slack integration, Smartlead</td></tr>
+    <tr><td><b>HITL terminal</b></td><td>SDR clicks Send, Edit, or Skip. Workflow does NOT auto-send.</td><td>Slack interactive message + Smartlead API trigger on SDR action</td></tr>
+  </table>
+</div>
+
+<script type="module">
+  import mermaid from 'https://esm.sh/mermaid@11/dist/mermaid.esm.min.mjs';
+  await document.fonts.ready;
+  mermaid.initialize({ startOnLoad:false, theme:'base', flowchart:{useMaxWidth:true, htmlLabels:true, curve:'basis'} });
+  await mermaid.run({ querySelector:'.mermaid' });
+</script>
+</body>
+</html>
