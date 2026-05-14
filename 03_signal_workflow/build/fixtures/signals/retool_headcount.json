@@ -1,7 +1,7 @@
 {
   "signal_id": "sig_retool_headcount_2026_04_23",
   "signal_type": "headcount_growth",
-  "signal_date": "2026-04-23",
+  "days_ago": 21,
   "company_id": "retool",
   "signal_source": "linkedin_pdl",
   "signal_payload": {

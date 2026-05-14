@@ -16,7 +16,7 @@ from __future__ import annotations
 
 import json
 import logging
-from datetime import date
+from datetime import date, timedelta
 from pathlib import Path
 from typing import Any, cast
 
@@ -42,8 +42,19 @@ def available_signals() -> list[tuple[str, str]]:
     return list(_SIGNAL_FILE_MAP.keys())
 
 
-def detect(signal_type: str, company_id: str) -> Signal:
+def detect(
+    signal_type: str,
+    company_id: str,
+    *,
+    reference_date: date | None = None,
+) -> Signal:
     """Return the Signal for `(signal_type, company_id)`.
+
+    Fixtures express signal age as `days_ago` (so the demo stays fresh
+    no matter when it's run); the literal `signal_date` is derived as
+    `reference_date - days_ago`. If a fixture instead provides a
+    literal `signal_date` field, that value is used unchanged — useful
+    for tests that need a specific calendar date.
 
     STUB: production replacement is a Clay polling job firing into the
     Signals table. Here we read the matching fixture file from disk.
@@ -59,15 +70,29 @@ def detect(signal_type: str, company_id: str) -> Signal:
     path = FIXTURE_ROOT / f"{stem}.json"
     logger.info("detector: loading fixture %s", path.name)
     raw = json.loads(path.read_text())
-    return _signal_from_dict(raw)
+    return _signal_from_dict(raw, reference_date=reference_date or date.today())
 
 
-def _signal_from_dict(raw: dict[str, Any]) -> Signal:
-    """Hydrate a Signal dataclass from the fixture JSON shape."""
+def _signal_from_dict(raw: dict[str, Any], *, reference_date: date) -> Signal:
+    """Hydrate a Signal dataclass from the fixture JSON shape.
+
+    Resolves `signal_date` from either the literal field or the
+    `days_ago` offset, preferring the literal if both are present.
+    """
+    if "signal_date" in raw:
+        signal_date = date.fromisoformat(raw["signal_date"])
+    elif "days_ago" in raw:
+        signal_date = reference_date - timedelta(days=int(raw["days_ago"]))
+    else:
+        raise ValueError(
+            f"Fixture {raw.get('signal_id', '?')!r} must declare either "
+            "'signal_date' (literal) or 'days_ago' (offset)."
+        )
+
     return Signal(
         signal_id=raw["signal_id"],
         signal_type=cast(SignalType, raw["signal_type"]),
-        signal_date=date.fromisoformat(raw["signal_date"]),
+        signal_date=signal_date,
         company_id=raw["company_id"],
         signal_source=raw["signal_source"],
         signal_payload=raw["signal_payload"],

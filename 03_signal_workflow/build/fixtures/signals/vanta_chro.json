@@ -1,7 +1,7 @@
 {
   "signal_id": "sig_vanta_chro_2026_05_06",
   "signal_type": "exec_hire",
-  "signal_date": "2026-05-06",
+  "days_ago": 8,
   "company_id": "vanta",
   "signal_source": "linkedin_apify",
   "signal_payload": {

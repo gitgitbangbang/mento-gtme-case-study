@@ -1,7 +1,7 @@
 {
   "signal_id": "sig_ramp_ld_posting_2026_04_30",
   "signal_type": "ld_posting",
-  "signal_date": "2026-04-30",
+  "days_ago": 14,
   "company_id": "ramp",
   "signal_source": "greenhouse",
   "signal_payload": {

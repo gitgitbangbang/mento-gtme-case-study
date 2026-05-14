@@ -1,7 +1,7 @@
 {
   "signal_id": "sig_linear_funding_2026_05_10",
   "signal_type": "funding",
-  "signal_date": "2026-05-10",
+  "days_ago": 4,
   "company_id": "linear",
   "signal_source": "crunchbase",
   "signal_payload": {
