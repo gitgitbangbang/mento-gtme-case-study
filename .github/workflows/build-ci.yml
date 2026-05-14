@@ -1,0 +1,57 @@
+name: build-ci
+
+# Lints, type-checks, and tests the Mento signal-engine working build
+# at 03_signal_workflow/build/. Scoped: only fires when files inside
+# that subtree (or this workflow itself) change, so unrelated commits
+# on the case-study side don't waste CI minutes.
+
+on:
+  push:
+    branches: [main, "feat/**"]
+    paths:
+      - "03_signal_workflow/build/**"
+      - ".github/workflows/build-ci.yml"
+  pull_request:
+    branches: [main]
+    paths:
+      - "03_signal_workflow/build/**"
+      - ".github/workflows/build-ci.yml"
+
+defaults:
+  run:
+    working-directory: 03_signal_workflow/build
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v3
+        with:
+          # Pin to a known-good uv release so CI is reproducible.
+          version: "0.5.x"
+
+      - name: Set up Python 3.12 (via uv)
+        run: uv python install 3.12
+
+      - name: Sync dependencies
+        run: uv sync --frozen
+
+      - name: Ruff (lint)
+        run: uv run ruff check src/ tests/
+
+      - name: Mypy (strict)
+        run: uv run mypy src/signal_engine
+
+      - name: Pytest
+        run: uv run pytest -q
+
+      - name: Coverage on deterministic core
+        run: |
+          uv pip install --quiet coverage
+          uv run coverage run --source=src/signal_engine -m pytest -q
+          uv run coverage report --include='src/signal_engine/scorer.py,src/signal_engine/router.py,src/signal_engine/gate.py,src/signal_engine/auditor.py' --fail-under=80
