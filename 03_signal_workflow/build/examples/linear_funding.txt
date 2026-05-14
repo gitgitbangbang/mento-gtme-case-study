@@ -1,0 +1,41 @@
+[1/5] Detecting signal: funding @ linear...
+      sig_linear_funding_2026_05_10 (crunchbase, fired 2026-05-10)
+[2/5] Enriching (mocked Clay waterfall)...
+      company=Linear icp_total=18 | contact=Karri Saarinen (CEO)
+[3/5] Scoring...
+      base_weight       4.000  (funding signal)
+      recency_decay     0.875  (4 days, half-life 30)
+      buyer_proximity   1.000  (CEO, engagement=7)
+      signal_score      3.501
+[4/5] Routing: P1
+      # STUB: SDR direct DM (would post to #sdr-priority, 60s SLA)
+[5/5] Drafting via Claude API...
+      Personalisation Agent: generating 3 hook candidates...
+        [1] (25w) Congrats on the Series C — $82m led by Accel is a serious vote of confidence in the small…
+        [2] (29w) Post-Series C is usually when the pressure to hire fast starts fighting the instinct to s…
+        [3] (27w) Your note about small teams forcing honesty resonated — the Accel round will bring real s…
+      Strong-Hook Gate: evaluating candidates...
+        [1] ✗ no buyer context
+        [2] ✗ not specific
+        [3] ✓ pass: Names Accel and ties the funding moment directly to a people-side scaling challenge Karri flagged herself.
+      Selected hook: candidate 3
+      Draft Assembly Agent: merging template + hook...
+
+────────────────────────────────────────────────────────────
+ DRAFT (Claude-generated)
+────────────────────────────────────────────────────────────
+Subject: manager bench
+
+Hi Karri,
+
+Your note about small teams forcing honesty resonated — the Accel round will bring real scaling pressure, and that's often where the people side gets complicated first.
+
+Pattern post-funding: hiring outpaces the manager bench by 90 days. Performance dips at the team-lead layer. Brex and Vercel saw it. Their People teams worked with our coaches in months 3–9.
+
+Happy to share the playbook. Worth 15 minutes?
+
+— Alex
+────────────────────────────────────────────────────────────
+(non-interactive: treating as send)
+[STUB] Would have triggered Smartlead campaign 'mento-signal-funding' with personalised_first_email custom variable populated.
+[AUDIT] /Users/jaredburke/code/mento-gtme-case-study/03_signal_workflow/build/audit/20260514T131442Z_sig_linear_funding_2026_05_10.json

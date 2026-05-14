@@ -68,7 +68,9 @@ def main(argv: list[str] | None = None) -> int:
     )
     args = parser.parse_args(argv)
 
-    load_dotenv()
+    # override=True so a value in .env wins over an empty ANTHROPIC_API_KEY
+    # that some shells / launchers export by default.
+    load_dotenv(override=True)
     _configure_logging(verbose=args.verbose)
 
     started_at = datetime.now(UTC)
