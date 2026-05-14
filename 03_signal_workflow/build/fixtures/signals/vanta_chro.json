@@ -1,0 +1,16 @@
+{
+  "signal_id": "sig_vanta_chro_2026_05_06",
+  "signal_type": "exec_hire",
+  "days_ago": 8,
+  "company_id": "vanta",
+  "signal_source": "linkedin_apify",
+  "signal_payload": {
+    "role": "CHRO",
+    "prospect_first_name": "Sarah",
+    "prospect_last_name": "Chen",
+    "prior_company": "Coda",
+    "prior_title": "VP People",
+    "start_date": "2026-05-06",
+    "announcement_url": "https://linkedin.com/posts/vanta-welcomes-sarah-chen"
+  }
+}

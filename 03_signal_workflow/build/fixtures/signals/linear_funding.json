@@ -1,0 +1,15 @@
+{
+  "signal_id": "sig_linear_funding_2026_05_10",
+  "signal_type": "funding",
+  "days_ago": 4,
+  "company_id": "linear",
+  "signal_source": "crunchbase",
+  "signal_payload": {
+    "round": "Series C",
+    "amount_usd": 82000000,
+    "lead_investor": "Accel",
+    "co_investors": ["Sequoia", "01 Advisors"],
+    "press_release_url": "https://linear.app/blog/series-c",
+    "announced_date": "2026-05-10"
+  }
+}

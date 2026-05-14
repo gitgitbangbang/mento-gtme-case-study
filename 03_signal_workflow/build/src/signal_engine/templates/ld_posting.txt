@@ -1,0 +1,13 @@
+Subject: before week 1
+
+Hi {prospect_first_name},
+
+{ai_hook}
+
+The 4-month gap before they start is the best window to set up a cohort they inherit day one. Anthropic and Hims did this. Saves 3 months after the leader lands.
+
+Happy to share how that handoff worked.
+
+Worth 15 minutes?
+
+— {sdr_signature}

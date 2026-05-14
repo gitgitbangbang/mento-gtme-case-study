@@ -1,0 +1,41 @@
+[1/5] Detecting signal: headcount_growth @ retool...
+      sig_retool_headcount_2026_04_23 (linkedin_pdl, fired 2026-04-23)
+[2/5] Enriching (mocked Clay waterfall)...
+      company=Retool icp_total=15 | contact=Jennifer Saavedra (Head of People)
+[3/5] Scoring...
+      base_weight       2.000  (headcount_growth signal)
+      recency_decay     0.497  (21 days, half-life 30)
+      buyer_proximity   0.900  (Head of People, engagement=3)
+      signal_score      0.894
+[4/5] Routing: P3
+      # STUB: P3 weekly digest (would post to #sdr-priority-p3, Monday 9am ET)
+[5/5] Drafting via Claude API...
+      Personalisation Agent: generating 3 hook candidates...
+        [1] (39w) You wrote that promoting first-time managers without training is the most common scaling …
+        [2] (36w) Going from 250 to 320 people at Retool in under six months is the exact inflection point …
+        [3] (36w) Retool's headcount is up 28% in six months and your own post says the manager layer needs…
+      Strong-Hook Gate: evaluating candidates...
+        [1] ✓ pass: Ties Jennifer's own published opinion directly to Retool's exact headcount growth and a derived manager count, making it personal and precise without any sales fluff.
+        [2] ✓ pass: Exact headcount numbers and timeframe anchor the hook, the manager-layer tension is directly relevant to a Head of People's current challenge, and the Dropbox callback invites a peer-level conversation without any sales language.
+        [3] ✓ pass: Ties exact growth figures and Jennifer's own public statement directly to a concrete operational question about her manager pipeline.
+      Selected hook: candidate 1
+      Draft Assembly Agent: merging template + hook...
+
+────────────────────────────────────────────────────────────
+ DRAFT (Claude-generated)
+────────────────────────────────────────────────────────────
+Subject: bench math
+
+Hi Jennifer,
+
+You wrote that promoting first-time managers without training is the most common scaling mistake — Retool just added roughly 70 people in six months, which by your own estimate puts around 12 new managers in the mix right now.
+
+Every 30 ICs need roughly 5 managers. You are promoting first-time managers into roles their training has not caught up to. Gusto and 1Password ran structured coaching for that group: 6-month programmes, 98% utilisation, 93% performance lift.
+
+Happy to share their setup. Worth 20 minutes?
+
+— Alex
+────────────────────────────────────────────────────────────
+(non-interactive: treating as send)
+[STUB] Would have triggered Smartlead campaign 'mento-signal-headcount-growth' with personalised_first_email custom variable populated.
+[AUDIT] /Users/jaredburke/code/mento-gtme-case-study/03_signal_workflow/build/audit/20260514T131558Z_sig_retool_headcount_2026_04_23.json

@@ -1,0 +1,16 @@
+{
+  "contact_id": "linear_karri",
+  "company_id": "linear",
+  "first_name": "Karri",
+  "last_name": "Saarinen",
+  "email": "karri@linear.app",
+  "title": "CEO",
+  "linkedin_url": "https://linkedin.com/in/karrisaarinen",
+  "buyer_role": "economic",
+  "engagement_score": 7,
+  "linkedin_summary": "Co-founder and CEO at Linear. Previously design lead at Airbnb. Writes about building software products with small teams.",
+  "recent_posts": [
+    "Excited to share Linear's Series C close. Thank you to our team, our customers, and Accel for leading the round.",
+    "Building software with a small team forces honesty about what's worth doing."
+  ]
+}

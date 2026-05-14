@@ -1,0 +1,13 @@
+Subject: bench math
+
+Hi {prospect_first_name},
+
+{ai_hook}
+
+Math at this stage: every 30 ICs need ~5 managers. You're promoting first-time managers into roles their training hasn't caught up to. Gusto and 1Password ran structured coaching for that group. 6-month programs, 98% utilisation, 93% performance lift.
+
+Happy to share their setup.
+
+Worth 20 minutes?
+
+— {sdr_signature}

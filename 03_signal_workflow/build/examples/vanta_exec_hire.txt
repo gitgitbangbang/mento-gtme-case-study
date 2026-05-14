@@ -1,0 +1,43 @@
+[1/5] Detecting signal: exec_hire @ vanta...
+      sig_vanta_chro_2026_05_06 (linkedin_apify, fired 2026-05-06)
+[2/5] Enriching (mocked Clay waterfall)...
+      company=Vanta icp_total=19 | contact=Sarah Chen (CHRO)
+[3/5] Scoring...
+      base_weight       3.000  (exec_hire signal)
+      recency_decay     0.766  (8 days, half-life 30)
+      buyer_proximity   1.000  (CHRO, engagement=6)
+      signal_score      2.298
+[4/5] Routing: P2
+      # STUB: P2 daily digest (would post to #sdr-priority-p2, 9am ET daily)
+[5/5] Drafting via Claude API...
+      Personalisation Agent: generating 3 hook candidates...
+        [1] (27w) Scaling Coda from 80 to 600 people is a decent proof point — curious what you're planning…
+        [2] (27w) Four years at Coda then straight into the CHRO role at Vanta suggests you're not taking a…
+        [3] (30w) Going from VP People at Coda to CHRO at Vanta mid-EMEA expansion is a lot to land in week…
+      Strong-Hook Gate: evaluating candidates...
+        [1] ✓ pass: References exact prior company and headcount range, ties directly to her new CHRO role at Vanta, and reads like one operator to another without filler.
+        [2] ✓ pass: Names both prior company and tenure, ties directly to her career move, and reads like a peer observation rather than a pitch.
+        [3] ✓ pass: Names exact prior title, prior company, new role, and a concrete situational pressure (EMEA expansion week one) that speaks directly to Sarah's immediate reality.
+      Selected hook: candidate 1
+      Draft Assembly Agent: merging template + hook...
+
+────────────────────────────────────────────────────────────
+ DRAFT (Claude-generated)
+────────────────────────────────────────────────────────────
+Subject: first 90 days
+
+Hi Sarah,
+
+Scaling Coda from 80 to 600 people is a decent proof point — curious what you're planning to build at Vanta now that you're in the seat.
+
+Most People execs start a coaching programme in months 2-6 of tenure. Coaches are former CHROs and VPs People who've sat in the same first-investment call.
+
+Happy to share what worked at Brex and Gusto.
+
+Worth 20 minutes?
+
+— Alex
+────────────────────────────────────────────────────────────
+(non-interactive: treating as send)
+[STUB] Would have triggered Smartlead campaign 'mento-signal-exec-hire' with personalised_first_email custom variable populated.
+[AUDIT] /Users/jaredburke/code/mento-gtme-case-study/03_signal_workflow/build/audit/20260514T131509Z_sig_vanta_chro_2026_05_06.json

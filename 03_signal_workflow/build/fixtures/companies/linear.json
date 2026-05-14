@@ -1,0 +1,18 @@
+{
+  "company_id": "linear",
+  "company_name": "Linear",
+  "domain": "linear.app",
+  "linkedin_url": "https://linkedin.com/company/linear",
+  "headcount": 280,
+  "industry": "B2B SaaS",
+  "funding_stage": "Series C",
+  "hr_tech_stack": ["Lattice", "Rippling"],
+  "icp_fit": 4,
+  "icp_timing": 4,
+  "icp_access": 4,
+  "icp_intent": 3,
+  "icp_budget": 3,
+  "icp_total": 18,
+  "lifecycle_stage": "Lead",
+  "recent_news": "Linear launched Customer Requests; agent-triage features rolling out across enterprise tier."
+}

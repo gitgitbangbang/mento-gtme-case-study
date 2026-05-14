@@ -1,0 +1,13 @@
+Subject: manager bench
+
+Hi {prospect_first_name},
+
+{ai_hook}
+
+Pattern post-funding: hiring outpaces the manager bench by 90 days. Performance dips at the team-lead layer. Brex and Vercel saw it. Their People teams worked with our coaches in months 3-9.
+
+Happy to share the playbook.
+
+Worth 15 minutes?
+
+— {sdr_signature}

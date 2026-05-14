@@ -1,0 +1,16 @@
+{
+  "contact_id": "ramp_jen",
+  "company_id": "ramp",
+  "first_name": "Jen",
+  "last_name": "Liu",
+  "email": "jen.liu@ramp.com",
+  "title": "VP People",
+  "linkedin_url": "https://linkedin.com/in/jenliu-people",
+  "buyer_role": "economic",
+  "engagement_score": 7,
+  "linkedin_summary": "VP People at Ramp for 2 years. Prior Director, Talent at Stripe. Focus on scaling People orgs through hypergrowth with strong manager bench.",
+  "recent_posts": [
+    "We're hiring a Director of Leadership Development at Ramp. The bar is high but the impact is bigger.",
+    "Best manager training I've seen is structured, peer-led, and tied to real performance data."
+  ]
+}

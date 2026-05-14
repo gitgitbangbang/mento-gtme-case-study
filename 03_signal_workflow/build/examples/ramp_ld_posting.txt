@@ -1,0 +1,43 @@
+[1/5] Detecting signal: ld_posting @ ramp...
+      sig_ramp_ld_posting_2026_04_30 (greenhouse, fired 2026-04-30)
+[2/5] Enriching (mocked Clay waterfall)...
+      company=Ramp icp_total=17 | contact=Jen Liu (VP People)
+[3/5] Scoring...
+      base_weight       3.000  (ld_posting signal)
+      recency_decay     0.627  (14 days, half-life 30)
+      buyer_proximity   1.000  (VP People, engagement=7)
+      signal_score      1.881
+[4/5] Routing: P2
+      # STUB: P2 daily digest (would post to #sdr-priority-p2, 9am ET daily)
+[5/5] Drafting via Claude API...
+      Personalisation Agent: generating 3 hook candidates...
+        [1] (28w) Saw the Director, Leadership Development role go live on Ramp's jobs page — building that…
+        [2] (30w) Your post about peer-led, data-tied manager training caught my eye — curious whether the …
+        [3] (39w) You built the manager bench at Stripe through serious scale, and now you're hiring a Dire…
+      Strong-Hook Gate: evaluating candidates...
+        [1] ✓ pass: Names the exact role and ties it to a real operational tension (LD build + Sales scaling) that a VP People would feel directly.
+        [2] ✓ pass: References Jen's own post and the exact job title being hired, then asks a sharp question about methodology ownership that only a VP People would care about.
+        [3] ✓ pass: References Stripe tenure, exact open role title, and asks a sharp build-vs-delegate question that only a VP People mid-hire would care about.
+      Selected hook: candidate 1
+      Draft Assembly Agent: merging template + hook...
+
+────────────────────────────────────────────────────────────
+ DRAFT (Claude-generated)
+────────────────────────────────────────────────────────────
+Subject: before week 1
+
+Hi Jen,
+
+Saw the Director, Leadership Development role go live on Ramp's jobs page — building that programme while simultaneously scaling Sales headcount is a particular kind of pressure test.
+
+The 4-month gap before they start is the best window to set up a cohort they inherit day one. Anthropic and Hims did this. Saves 3 months after the leader lands.
+
+Happy to share how that handoff worked.
+
+Worth 15 minutes?
+
+— Alex
+────────────────────────────────────────────────────────────
+(non-interactive: treating as send)
+[STUB] Would have triggered Smartlead campaign 'mento-signal-ld-posting' with personalised_first_email custom variable populated.
+[AUDIT] /Users/jaredburke/code/mento-gtme-case-study/03_signal_workflow/build/audit/20260514T131530Z_sig_ramp_ld_posting_2026_04_30.json
