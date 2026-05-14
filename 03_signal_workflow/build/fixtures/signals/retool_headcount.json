@@ -1,0 +1,14 @@
+{
+  "signal_id": "sig_retool_headcount_2026_04_23",
+  "signal_type": "headcount_growth",
+  "signal_date": "2026-04-23",
+  "company_id": "retool",
+  "signal_source": "linkedin_pdl",
+  "signal_payload": {
+    "headcount_old": 250,
+    "headcount_new": 320,
+    "growth_pct": 28,
+    "window_months": 6,
+    "new_managers_estimate": 12
+  }
+}

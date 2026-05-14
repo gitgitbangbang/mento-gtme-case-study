@@ -1,0 +1,15 @@
+{
+  "signal_id": "sig_ramp_ld_posting_2026_04_30",
+  "signal_type": "ld_posting",
+  "signal_date": "2026-04-30",
+  "company_id": "ramp",
+  "signal_source": "greenhouse",
+  "signal_payload": {
+    "job_title": "Director, Leadership Development",
+    "department": "People",
+    "location": "New York, NY",
+    "posting_date": "2026-04-30",
+    "job_posting_url": "https://jobs.ramp.com/director-leadership-development",
+    "jd_excerpt": "Build and run Ramp's leadership development program for first-time managers through Director level. Partner with senior leaders to scale management capability through hypergrowth."
+  }
+}

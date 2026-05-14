@@ -1,0 +1,18 @@
+{
+  "company_id": "ramp",
+  "company_name": "Ramp",
+  "domain": "ramp.com",
+  "linkedin_url": "https://linkedin.com/company/ramp-financial",
+  "headcount": 1100,
+  "industry": "FinTech / Spend Management",
+  "funding_stage": "Series D",
+  "hr_tech_stack": ["Lattice", "Rippling", "Greenhouse", "Workday"],
+  "icp_fit": 4,
+  "icp_timing": 4,
+  "icp_access": 3,
+  "icp_intent": 3,
+  "icp_budget": 3,
+  "icp_total": 17,
+  "lifecycle_stage": "Lead",
+  "recent_news": "Ramp shipped AI Travel + procurement; hiring across Sales and People."
+}

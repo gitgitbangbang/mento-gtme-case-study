@@ -1,0 +1,18 @@
+{
+  "company_id": "vanta",
+  "company_name": "Vanta",
+  "domain": "vanta.com",
+  "linkedin_url": "https://linkedin.com/company/vanta-security",
+  "headcount": 720,
+  "industry": "Security / Compliance SaaS",
+  "funding_stage": "Series C",
+  "hr_tech_stack": ["Lattice", "Rippling", "Greenhouse"],
+  "icp_fit": 4,
+  "icp_timing": 4,
+  "icp_access": 4,
+  "icp_intent": 4,
+  "icp_budget": 3,
+  "icp_total": 19,
+  "lifecycle_stage": "MQL",
+  "recent_news": "Vanta launched AI-assisted SOC 2 evidence collection; expanding GTM in EMEA."
+}

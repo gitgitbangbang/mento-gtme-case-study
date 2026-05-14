@@ -1,0 +1,18 @@
+{
+  "company_id": "retool",
+  "company_name": "Retool",
+  "domain": "retool.com",
+  "linkedin_url": "https://linkedin.com/company/retool",
+  "headcount": 320,
+  "industry": "B2B SaaS / Developer Tools",
+  "funding_stage": "Series C",
+  "hr_tech_stack": ["Lattice", "Rippling", "Ashby"],
+  "icp_fit": 4,
+  "icp_timing": 3,
+  "icp_access": 3,
+  "icp_intent": 3,
+  "icp_budget": 2,
+  "icp_total": 15,
+  "lifecycle_stage": "Lead",
+  "recent_news": "Retool released Agents framework for internal apps; engineering team scaling."
+}
