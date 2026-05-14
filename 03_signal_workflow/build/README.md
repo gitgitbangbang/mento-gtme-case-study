@@ -80,22 +80,85 @@ Worth 15 minutes?
 
 The draft is a live Claude API output, not a hardcoded string.
 
-## Quick Start
+## For the Reviewer — Six Steps to See It Work
 
-```bash
-cd 03_signal_workflow/build
-cp .env.example .env
-# add your ANTHROPIC_API_KEY
+1. **Clone the repo and move into the build directory.**
 
-uv sync
-uv run pytest
-uv run python -m signal_engine.run --signal funding --company linear
-```
+   ```bash
+   git clone https://github.com/gitgitbangbang/mento-gtme-case-study.git
+   cd mento-gtme-case-study/03_signal_workflow/build
+   ```
+
+2. **Set your `ANTHROPIC_API_KEY`.** The repo ships an `.env.example`. Copy it and paste your key in. `.env` is gitignored, so it stays on your machine.
+
+   ```bash
+   cp .env.example .env
+   # then open .env and set:
+   # ANTHROPIC_API_KEY=sk-ant-...
+   ```
+
+   If you'd rather export it inline:
+
+   ```bash
+   export ANTHROPIC_API_KEY=sk-ant-...
+   ```
+
+3. **Install and run.** [`uv`](https://docs.astral.sh/uv/) handles Python 3.12 + the lockfile.
+
+   ```bash
+   uv sync
+   uv run python -m signal_engine.run --signal funding --company linear
+   ```
+
+4. **Watch a real signal flow through every stage.** The CLI prints stage-by-stage status:
+
+   - **[1/5] Detection** loads the signal from `fixtures/signals/` (STUB for Clay polling)
+   - **[2/5] Enrichment** loads the matching company + buyer contact (STUB for the Apollo / Ocean / Clearbit waterfall)
+   - **[3/5] Scoring** computes `base_weight × recency_decay × buyer_proximity`
+   - **[4/5] Routing** assigns P1 / P2 / P3 / Discovery / Park
+   - **[5/5] Drafting** is the real agentic layer — Personalisation Agent (live Claude call) → Strong-Hook Gate (live Claude judge call + deterministic checks) → Draft Assembly Agent (live Claude polish call)
+
+5. **Approve / edit / skip the draft at the HITL prompt.** When the draft prints, you'll see:
+
+   ```
+   [s]end / [e]dit / [k]ip > _
+   ```
+
+   - `s` simulates sending via Smartlead (prints what the production Smartlead call would do — no real send)
+   - `e` opens the body in `$EDITOR` (default `vim`) so you can adjust copy before send
+   - `k` skips the signal; production would decay it and capture a reason
+
+6. **Read the audit log and the generated email.** After every run the CLI prints the audit-file path:
+
+   ```
+   [AUDIT] audit/20260514T131442Z_sig_linear_funding_2026_05_10.json
+   ```
+
+   That file captures the full trace: signal payload, enrichment data, score breakdown (every multiplier visible), tier, all hook candidates with their gate verdicts, the selected hook, the final draft body, and your Send / Edit / Skip decision. Open it to see what the engine did, in order, with full traceability.
+
+### Try the Other Three Signals
 
 Available signals: `funding`, `exec_hire`, `ld_posting`, `headcount_growth`.
 Available companies: `linear`, `vanta`, `ramp`, `retool`.
 
-Useful flags:
+```bash
+uv run python -m signal_engine.run --signal exec_hire --company vanta
+uv run python -m signal_engine.run --signal ld_posting --company ramp
+uv run python -m signal_engine.run --signal headcount_growth --company retool
+```
+
+Each produces a different tier (Linear=P1, Vanta=P2, Ramp=P2, Retool=P3) so you can see routing diverge in practice. Captured example outputs from a recent live run sit in [`examples/`](./examples/).
+
+### Run the Tests
+
+```bash
+uv run pytest
+```
+
+45 tests, 94% coverage on the deterministic core (scorer, router, gate, auditor). No API key needed — the gate tests use a stubbed Claude client.
+
+### Useful Flags
+
 - `--non-interactive` — skip the HITL prompt (treats every draft as Send). For CI / smoke tests.
 - `--no-polish` — skip the assembler's final Claude voice pass. Saves one API call per run.
 - `--sdr-signature "Your Name"` — override the signoff (default `Alex`).
