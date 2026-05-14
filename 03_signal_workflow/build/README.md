@@ -197,27 +197,43 @@ build/
 
 See [`../03_workflow_architecture_text.md`](../03_workflow_architecture_text.md), [`../03_signal_scoring_framework.md`](../03_signal_scoring_framework.md), and [`../03_outreach_drafts.md`](../03_outreach_drafts.md). This code is a faithful implementation of those docs.
 
-The orchestration shape:
+```mermaid
+flowchart TD
+    Start([CLI: --signal X --company Y]) --> Detect[detector.detect<br/>STUB: fixtures/signals/*.json<br/>prod: Clay polling]
+    Detect --> Enrich[enricher.enrich<br/>STUB: fixtures/companies + /contacts<br/>prod: Apollo / Ocean / Clearbit waterfall]
+    Enrich --> Score[scorer.compute<br/>base_weight × recency_decay × buyer_proximity]
+    Score --> Route{router.assign}
 
+    Route -- P1 / P2 / P3 --> Personalise[personaliser.generate_hooks<br/>REAL Claude API · 3 candidates]
+    Route -- Discovery --> StubDisc[STUB: Find Contacts at Company<br/>6h SLA · re-score next pass]
+    Route -- Park --> StubPark[no alert · rescore monthly]
+
+    Personalise --> Gate{gate.evaluate<br/>+ pick_strongest}
+    Gate -- all fail --> Manual[STUB: manual review queue<br/>no draft to SDR]
+    Gate -- pass --> Assemble[assembler.assemble<br/>template merge + REAL Claude polish]
+    Assemble --> HITL{hitl.review<br/>s / e / k}
+
+    HITL -- send --> Smartlead[STUB: Smartlead campaign trigger<br/>POST /api/v1/leads + start-lead]
+    HITL -- edit --> EditBody[open in $EDITOR<br/>then send edited body]
+    HITL -- skip --> SkipReason[capture skip reason<br/>decay the signal]
+
+    Smartlead --> Audit[auditor.write<br/>audit/&lt;ts&gt;_&lt;signal_id&gt;.json]
+    EditBody --> Audit
+    SkipReason --> Audit
+    Manual --> Audit
+    StubDisc --> Audit
+    StubPark --> Audit
+    Audit --> Done([exit 0])
+
+    classDef stub fill:#fff3e0,stroke:#e65100,color:#000
+    classDef live fill:#e8f5e9,stroke:#2e7d32,color:#000
+    classDef hitl fill:#e3f2fd,stroke:#1565c0,color:#000
+    class Detect,Enrich,StubDisc,StubPark,Manual,Smartlead stub
+    class Personalise,Assemble live
+    class HITL,EditBody hitl
 ```
-detector.detect()         # Stage 1: load Signal from fixtures
-   ↓
-enricher.enrich()         # Stage 2: load Company + Contact
-   ↓
-scorer.compute()          # Stage 3: base_weight × recency_decay × buyer_proximity
-   ↓
-router.assign()           # Stage 4a: P1 / P2 / P3 / Discovery / Park
-   ↓
-personaliser.generate_hooks()  # Stage 4b: 3 hook candidates via Claude
-   ↓
-gate.evaluate() + pick_strongest()  # Stage 4c: Strong-Hook Gate
-   ↓
-assembler.assemble()      # Stage 4d: template + hook → final Draft
-   ↓
-hitl.review()             # Stage 4e: SDR Send / Edit / Skip
-   ↓
-auditor.write()           # JSON audit at audit/<ts>_<signal_id>.json
-```
+
+Legend: orange = STUB (mocked I/O), green = live Claude API call, blue = SDR human-in-the-loop. Everything else is pure Python with no external dependencies.
 
 Discovery and Park exit early before the agentic layer. Manual review fires when no hook candidate clears the Strong-Hook Gate. Every exit path writes a full audit entry.
 
