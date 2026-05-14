@@ -1,0 +1,327 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Mento HubSpot data model</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700&family=Source+Serif+Pro:ital,wght@1,400&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --m-dark:#0e1719;
+    --m-white:#ffffff;
+    --m-cream:#fbf5ec;
+    --m-text:#27373F;
+    --m-heading:#0e1719;
+    --m-muted:#5c5c5c;
+    --m-yellow:#FACC15;
+    --m-yellow-soft:#FFF3CC;
+    --m-sage:#7a9082;
+    --m-sage-deep:#637a6f;
+    --m-sage-soft:#bdccbe;
+    --m-border:#e0dcd0;
+    --font-sans:'Hanken Grotesk',system-ui,-apple-system,Segoe UI,sans-serif;
+    --font-serif:'Source Serif Pro',Georgia,'Times New Roman',serif;
+  }
+  *{box-sizing:border-box;}
+  html,body{
+    margin:0;
+    padding:0;
+    background:var(--m-white);
+    color:var(--m-text);
+    font-family:var(--font-sans);
+    font-size:16px;
+    line-height:1.6;
+    font-weight:400;
+    -webkit-font-smoothing:antialiased;
+    -moz-osx-font-smoothing:grayscale;
+  }
+  .topband{
+    background:var(--m-dark);
+    color:#ffffff;
+    padding:18px 0;
+  }
+  .topband-inner{
+    max-width:1080px;
+    margin:0 auto;
+    padding:0 32px;
+  }
+  .brand{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    font-weight:700;
+    font-size:22px;
+    letter-spacing:-0.5px;
+    color:#ffffff;
+  }
+  .page{
+    max-width:1040px;
+    margin:0 auto;
+    padding:48px 32px 96px;
+  }
+  .hero{
+    margin-bottom:48px;
+    padding-bottom:24px;
+    border-bottom:1px solid var(--m-border);
+  }
+  h1{
+    font-family:var(--font-sans);
+    font-size:44px;
+    font-weight:700;
+    line-height:1.15;
+    letter-spacing:-1px;
+    color:var(--m-heading);
+    margin:0;
+  }
+  h1 .ital{
+    font-family:var(--font-serif);
+    font-style:italic;
+    font-weight:400;
+    color:var(--m-sage-deep);
+  }
+  h2{
+    font-family:var(--font-sans);
+    font-size:26px;
+    font-weight:600;
+    line-height:1.3;
+    letter-spacing:-0.4px;
+    color:var(--m-heading);
+    margin:56px 0 6px 0;
+  }
+  h2 .ital{
+    font-family:var(--font-serif);
+    font-style:italic;
+    font-weight:400;
+    color:var(--m-sage-deep);
+  }
+  p.sublede{
+    font-size:15px;
+    color:var(--m-muted);
+    margin:0 0 18px 0;
+    max-width:780px;
+  }
+  .badge{
+    display:inline-flex;
+    align-items:center;
+    gap:6px;
+    font-size:11px;
+    font-weight:600;
+    padding:5px 11px;
+    border-radius:99px;
+    background:var(--m-sage-soft);
+    color:#3a4a40;
+    margin-bottom:18px;
+    letter-spacing:0.6px;
+    text-transform:uppercase;
+  }
+  .badge.yellow{
+    background:var(--m-yellow-soft);
+    color:#7a5e00;
+  }
+  .diagram-card{
+    background:var(--m-white);
+    border:1px solid var(--m-border);
+    border-radius:14px;
+    padding:32px;
+    margin-bottom:32px;
+    overflow:auto;
+  }
+  .diagram-card.sage{border-top:3px solid var(--m-sage);}
+  .diagram-card.yellow{border-top:3px solid var(--m-yellow);}
+  pre.mermaid{
+    margin:0;
+    background:none;
+    text-align:center;
+  }
+  .legend{
+    display:flex;
+    flex-wrap:wrap;
+    gap:18px;
+    margin-top:22px;
+    padding-top:18px;
+    border-top:1px dashed var(--m-border);
+    font-size:13px;
+    color:var(--m-muted);
+  }
+  .legend-item{display:flex;align-items:center;gap:8px;}
+  .legend-dot{
+    width:10px;
+    height:10px;
+    border-radius:50%;
+    display:inline-block;
+  }
+  .legend-dot.sage{background:var(--m-sage);}
+  .legend-dot.yellow{background:var(--m-yellow);}
+  .legend-dot.dark{background:var(--m-dark);}
+</style>
+</head>
+<body>
+
+<div class="topband">
+  <div class="topband-inner">
+    <div class="brand">
+      <span class="brand-mark">
+        <svg width="26" height="26" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+          <path d="M4 18 L4 8 L12 14 L20 8 L20 18 Z" fill="#7a9082"/>
+        </svg>
+      </span>
+      Mento
+    </div>
+  </div>
+</div>
+
+<div class="page">
+  <div class="hero">
+    <h1>HubSpot <span class="ital">data model</span></h1>
+  </div>
+
+  <h2>Entity <span class="ital">relationships</span></h2>
+  <p class="sublede">Contact, Deal, Signal Event, Cohort, and Engagement all attach to Company. Signal Event optionally triggers a Deal, which generates a Cohort on Closed Won.</p>
+
+  <div class="diagram-card sage">
+    <div class="badge">ER diagram</div>
+    <pre class="mermaid">
+erDiagram
+    COMPANY ||--o{ CONTACT : has
+    COMPANY ||--o{ DEAL : has
+    COMPANY ||--o{ COHORT : has
+    COMPANY ||--o{ SIGNAL_EVENT : fires
+    COMPANY ||--o{ ENGAGEMENT : logs
+    CONTACT ||--o{ ENGAGEMENT : participates
+    DEAL ||--o| COHORT : creates
+    SIGNAL_EVENT }o--o| DEAL : triggers
+    COMPANY {
+        string company_id PK
+        string company_linkedin_url
+        string normalized_domain
+        string company_name
+        int headcount
+        string funding_stage
+        string hr_tech_stack
+        int icp_fit
+        int icp_timing
+        int icp_access
+        int icp_intent
+        int icp_budget
+        int icp_total
+        string lifecycle_stage
+        json dedup_audit
+    }
+    CONTACT {
+        string contact_id PK
+        string company_id FK
+        string email
+        string personal_linkedin_url
+        string first_name
+        string last_name
+        string title
+        string buyer_role
+        string original_source
+        int engagement_score
+    }
+    DEAL {
+        string deal_id PK
+        string company_id FK
+        string deal_stage
+        string tier
+        int seats
+        float acv
+        date expected_close
+        string triggering_signal_id FK
+    }
+    COHORT {
+        string cohort_id PK
+        string deal_id FK
+        string company_id FK
+        date start_date
+        int seat_count
+        float nps_score
+        int expansion_signals
+        string renewal_status
+    }
+    SIGNAL_EVENT {
+        string signal_id PK
+        string company_id FK
+        string signal_type
+        string signal_source
+        date signal_date
+        int signal_weight
+        bool ai_drafted
+    }
+    ENGAGEMENT {
+        string engagement_id PK
+        string contact_id FK
+        string company_id FK
+        string channel
+        date timestamp
+        string direction
+        string avoma_transcript_id
+    }
+    </pre>
+    <div class="legend">
+      <div class="legend-item"><span class="legend-dot sage"></span>Entity borders</div>
+      <div class="legend-item"><span class="legend-dot dark"></span>Relationship lines</div>
+      <div class="legend-item">PI = Primary Record ID</div>
+      <div class="legend-item">AI = Associated Record ID</div>
+    </div>
+  </div>
+
+  <h2>Lifecycle <span class="ital">state machine</span></h2>
+  <p class="sublede">Deterministic entry and exit rules per stage. ICP score gates Subscriber to MQL. Manual SDR confirmation is the human in the loop at MQL to SQL. Customer to Expansion turns expansion into a measurable motion rather than a side effect.</p>
+
+  <div class="diagram-card yellow">
+    <div class="badge yellow">State diagram</div>
+    <pre class="mermaid">
+stateDiagram-v2
+    direction LR
+    [*] --> Subscriber
+    Subscriber --> Lead : ICP Fit >= 2 + engagement
+    Lead --> MQL : ICP Total >= 11
+    MQL --> SQL : SDR confirms + meeting booked
+    SQL --> Opportunity : Deal created
+    Opportunity --> Customer : Closed Won
+    Customer --> Expansion : new Deal on same Company
+    Customer --> Dormant : cohort complete + 90d silence
+    Expansion --> Customer : Closed Won
+    Dormant --> Lead : re-engagement event
+    </pre>
+    <div class="legend">
+      <div class="legend-item"><span class="legend-dot yellow"></span>State borders</div>
+      <div class="legend-item"><span class="legend-dot sage"></span>Transitions</div>
+      <div class="legend-item">All transitions are rule-driven, not vibes-driven</div>
+    </div>
+  </div>
+
+</div>
+
+<script type="module">
+  import mermaid from 'https://esm.sh/mermaid@11/dist/mermaid.esm.min.mjs';
+  await document.fonts.ready;
+  mermaid.initialize({
+    startOnLoad: false,
+    theme: 'base',
+    themeVariables: {
+      primaryColor: '#ffffff',
+      primaryTextColor: '#0e1719',
+      primaryBorderColor: '#7a9082',
+      lineColor: '#637a6f',
+      secondaryColor: '#fbf5ec',
+      tertiaryColor: '#FFF3CC',
+      textColor: '#27373F',
+      attributeBackgroundColorOdd: '#fbf5ec',
+      attributeBackgroundColorEven: '#ffffff'
+    },
+    er: { useMaxWidth: true, diagramPadding: 24, layoutDirection: 'TB' },
+    state: { useMaxWidth: true }
+  });
+  await mermaid.run({ querySelector: '.mermaid' });
+  // Rename PK/FK to PI/AI in rendered SVGs to match Mento's ID convention
+  document.querySelectorAll('.mermaid text, .mermaid tspan').forEach(t => {
+    if (t.textContent.trim() === 'PK') t.textContent = 'PI';
+    else if (t.textContent.trim() === 'FK') t.textContent = 'AI';
+  });
+</script>
+</body>
+</html>

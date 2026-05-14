@@ -1,0 +1,25 @@
+# OS
+.DS_Store
+Thumbs.db
+
+# Editor
+.vscode/
+.idea/
+*.swp
+
+# Sensitive / not for public repo
+Mento GTME Case Study.docx
+*.private.md
+
+# Build artifacts
+node_modules/
+dist/
+.cache/
+
+# Claude Code working files (NEVER commit to public repo)
+.claude/
+CLAUDE.md
+CLAUDE.local.md
+CLAUDE.*.md
+.claude.local/
+**/CLAUDE.local.md
