@@ -225,7 +225,7 @@ Use the EXACT data from the 3.5 Live Examples:
 
 ### Step 10 — Tests (commit: `test(build): unit tests for scorer, router, gate, audit`)
 
-pytest. Cover the deterministic core. Skip the LLM-calling modules (or mock the anthropic client). Aim for >80% coverage on `scorer.py`, `router.py`, the deterministic part of `gate.py`, and `auditor.py`.
+pytest. Cover the deterministic core. Skip the LLM-calling modules (or mock the anthropic client). Target ~57 tests, ~94% coverage on the deterministic core (`scorer.py`, `router.py`, the deterministic part of `gate.py`, and `auditor.py`).
 
 ### Step 11 — README (commit: `docs(build): add README explaining working vs mocked split`)
 
@@ -305,7 +305,7 @@ Do not auto-merge. Leave the PR open for Jared to review.
 The build is done when:
 
 - [ ] `uv sync` runs cleanly with no warnings
-- [ ] `uv run pytest` passes all tests with >80% coverage on the deterministic modules
+- [ ] `uv run pytest` passes all tests (~57 tests) with ~94% coverage on the deterministic core
 - [ ] `uv run ruff check src/ tests/` passes
 - [ ] `uv run mypy src/signal_engine` passes (strict for src/, OK to be lenient on tests)
 - [ ] All four signal types run end to end and produce real Claude-generated drafts
@@ -340,7 +340,7 @@ Roughly **65% real working code, 35% mocked**. Mocking is concentrated at extern
 | Draft Assembly Agent | Real Claude API call |
 | CLI HITL prompt | Real interactive `[s]end / [e]dit / [k]ip` |
 | Audit logger | Writes JSON to `audit/` per signal event |
-| Tests | pytest with >80% coverage on deterministic core |
+| Tests | pytest, ~57 tests, ~94% coverage on deterministic core |
 
 ### Mocked (with `# STUB:` comments)
 

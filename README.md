@@ -1,65 +1,85 @@
-# Mento GTM Engineer Case Study
+# Mento: GTM Engineer Case Study
 
-Take-home case study response for the GTM Engineer role at [Mento](https://www.mento.co).
+> Mento has a real customer base, real buying signals, and real first-party data. What it doesn't have is the infrastructure to turn that into a scalable, repeatable revenue engine. This submission lays out what I'd build, in what order, and why.
 
 **Candidate.** Jared Burke
 **Date.** May 2026
-**Live submission.** [Mento: GTM Engineer Case Study (Notion)](https://www.notion.so/3607642d57d781ce9c16f0541f6992ef)
+**Code home.** https://github.com/gitgitbangbang/mento-gtme-case-study
+**Live submission (Notion master page):** https://www.notion.so/pyrashyut/Mento-GTM-Engineer-Case-Study-3607642d57d781ce9c16f0541f6992ef
+
+## Status
+
+All shipped, merged, CI-green on main. Test coverage ~94% on the deterministic core. Branch protection active. End-to-end live verification on a clean clone passed.
+
+- Part 1 ✓ Diagnose & Prioritize
+- Part 2 ✓ Data Foundation Plan + Clay Board Build
+- Part 3 docs ✓ ICP, Workflow Text, Workflow Diagram, Scoring, Outreach Drafts, Claude Code Build
+- Part 3 build ✓ Working Python signal engine merged via PR #1
+- CI green
+- Branch protection active
+
+## Reading Order
+
+| Mode | Read this first |
+|---|---|
+| 15 min | Notion master page → 99 Submission Index → 3.6 Claude Code Working Build |
+| 60 min | Add Parts 1, 2 (incl. Clay Board Build), and 3.1-3.5 |
+| 2 hours | Open `03_signal_workflow/build/` and run the engine end to end |
 
 ## Structure
 
 ```
 .
-├── 00_pre-flight/                  Assumptions register
-├── 01_diagnose_prioritize/         Part 1. Diagnose & Prioritize
-├── 02_data_foundation/             Part 2. Data Foundation Plan
-│   ├── 02_data_foundation.md       Prose answer to brief's four asks
-│   ├── data_model.html             Interactive data model + lifecycle diagram
+├── 00_pre-flight/
+│   └── assumptions_register.md
+├── 01_diagnose_prioritize/
+│   └── 01_diagnose_prioritize.md
+├── 02_data_foundation/
+│   ├── 02_data_foundation.md
+│   ├── data_model.html
 │   └── clay_build/
-│       └── 02_clay_board_build.md  Three-table Clay board build doc
-├── 03_signal_workflow/             Part 3. Buying Signal Workflow (in progress)
-│   ├── clay_build/
-│   └── outreach_drafts/
-└── 99_submission/                  Submission index
+│       └── 02_clay_board_build.md
+├── 03_signal_workflow/
+│   ├── 03_icp_and_signals.md
+│   ├── 03_workflow_architecture_text.md
+│   ├── 03_signal_scoring_framework.md
+│   ├── 03_outreach_drafts.md
+│   ├── workflow_diagram.html
+│   └── build/
+│       ├── CLAUDE_CODE_BRIEF.md
+│       └── (Python signal engine implementation)
+└── README.md
 ```
 
-## Live Artifacts
+## Live Artifacts (GitHub Pages)
 
-- **[data_model.html](./02_data_foundation/data_model.html)**. Interactive entity diagram + lifecycle state machine, branded to Mento's design system. Built with Mermaid + Mento's coral/sage palette + Hanken Grotesk typography.
+- Data model: https://gitgitbangbang.github.io/mento-gtme-case-study/02_data_foundation/data_model.html
+- Workflow diagram: https://gitgitbangbang.github.io/mento-gtme-case-study/03_signal_workflow/workflow_diagram.html
 
-Once GitHub Pages is enabled on this repo, every artifact is also reachable as a public URL the Mento reviewer can click directly from the Notion submission.
+## Claude Code Working Build (Part 3)
 
-## Claude Code Working Build (Part 3 Companion)
+Roughly **65% real working code, 35% mocked**. Real: scoring, routing, audit, Personalisation Agent + Strong-Hook Gate + Draft Assembly Agent (all real Claude API), CLI HITL. Mocked at external API boundaries (Crunchbase, LinkedIn, HubSpot, Slack, Smartlead) with explicit `# STUB:` comments.
 
-Part 3's signal workflow is implemented as a runnable Python project at [`03_signal_workflow/build/`](./03_signal_workflow/build/). Roughly **65% real working code, 35% mocked**. The mocking is concentrated at external API boundaries (Crunchbase, LinkedIn, HubSpot, Slack, Smartlead). The orchestration logic, scoring, agentic drafting, and audit trail are real and runnable.
-
-### What's Real
-
-Scoring formula, routing tiers, Personalisation Agent (real Claude API), Strong-Hook Gate, Draft Assembly Agent (real Claude API), CLI HITL prompt, JSON audit logging, pytest suite.
-
-### What's Mocked
-
-External API integrations (signal detection, enrichment, HubSpot lookup/write, Slack DM, Smartlead send). Every mock carries a `# STUB:` comment with a note on the production replacement.
-
-### Quick Start
+Quick start:
 
 ```bash
 cd 03_signal_workflow/build
 cp .env.example .env
 # add your ANTHROPIC_API_KEY
 uv sync
+uv run pytest
 uv run python -m signal_engine.run --signal funding --company linear
 ```
 
-See [`03_signal_workflow/build/README.md`](./03_signal_workflow/build/README.md) for the full working/mocked breakdown and architecture explanation.
+See `03_signal_workflow/build/README.md` for the full breakdown and a 7-step verification walkthrough.
 
-## Reading Order
+## Engagement Model Mapping
 
-1. Notion master page (link above) for the reviewer-facing read.
-2. Part 1 sets the strategic frame (60-day priorities, week 1 discovery, risk).
-3. Part 2 answers the four data foundation questions (dedupe, enrichment, ICP scoring, lifecycle) and links to the interactive data model.
-4. Part 3 covers the buying signal workflow (build doc + Claude Code approach plan).
+- Part 1 + Part 2 plan = Consultancy
+- Part 2 Clay = Done-For-You
+- Part 3 engine = Hybrid
 
-## Why This Repo Exists
+## Contact
 
-Mirrors the live Notion submission for portability, version history, and as a public-URL host for the interactive HTML artifacts that Notion can't render natively.
+Jared Burke. jared@pyrashyut.com. pyrashyut.com.
+Pyrashyut LLC | GTM Engineering As A Service | Tbilisi, Georgia

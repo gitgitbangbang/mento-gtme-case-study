@@ -1,6 +1,4 @@
-# Part 3.5. Pre-Populated Outreach Drafts per Signal
-
-Four templates, one per brief signal. Built using Pyrashyut's cold email framework (Trigger → Insight → Ask), Josh Braun's low-stakes principles, and Mento's brand voice. Each email is the first touch in a Smartlead sequence specific to the signal type.
+# 3.5 Pre-Populated Outreach Drafts
 
 ## Brand Voice Rules
 
@@ -107,8 +105,6 @@ Worth 15 minutes?
 
 **LinkedIn variant:** `Hi {{prospect_first_name}}, saw {{company_name}}'s {{funding_round}}. Pattern post-funding is the manager bench falling behind hiring. Have a playbook from Brex and Vercel if useful.`
 
-**Trigger variables.** `funding_round`, `funding_amount`, `funding_date`, `lead_investor`.
-
 ### Live Example: Linear's $82M Series C (Oct 2024, Accel-Led)
 
 Signal payload received by the agent:
@@ -173,8 +169,6 @@ Worth 20 minutes?
 
 **LinkedIn variant:** `Hi {{prospect_first_name}}, welcome to {{company_name}}. Most People execs run a coaching program in months 2-6. Have notes from Brex and Gusto if useful.`
 
-**Trigger variables.** `prospect_first_name`, `prospect_title`, `prospect_start_date`, `prospect_prior_company`.
-
 ### Live Example: Vanta Hires New CHRO
 
 ```
@@ -235,8 +229,6 @@ Worth 15 minutes?
 ```
 
 **LinkedIn variant:** `Hi {{prospect_first_name}}, saw the {{job_title}} posting. The 4-month gap before they start is the window to set up a cohort they inherit day one. Worth a quick chat?`
-
-**Trigger variables.** `job_title`, `job_posting_url`, `job_posting_date`.
 
 ### Live Example: Ramp Posts Director of Leadership Development
 
@@ -300,8 +292,6 @@ Worth 20 minutes?
 
 **LinkedIn variant:** `Hi {{prospect_first_name}}, {{company_name}} hit {{growth_pct}} growth in 6 months. Usually means a wave of first-time managers. Coaching playbooks from Gusto and 1Password if useful.`
 
-**Trigger variables.** `headcount_old`, `headcount_new`, `growth_pct`, `new_managers_needed`.
-
 ### Live Example: Retool Grows 250 to 320 (28% in 6 Months)
 
 ```
@@ -337,35 +327,3 @@ Worth 20 minutes?
 ```
 
 **69 words.**
-
----
-
-## Pre-Populate Path Into Smartlead (Email Sequencer)
-
-Each signal type has its own Smartlead campaign with a multi-step sequence. The first email contains a `{{personalised_first_email}}` custom variable that holds the AI-assembled draft.
-
-### Flow When SDR Clicks Send
-
-1. SDR clicks `[Send via Smartlead]` in the Slack draft message
-2. Clay calls Smartlead API:
-   - `POST /api/v1/leads/{campaign_id}` adds the lead with all custom variables populated
-   - `POST /api/v1/campaigns/{campaign_id}/start-lead/{lead_id}` fires the first email immediately
-3. Smartlead handles assignment, spintax, delivery, domain rotation, deliverability monitoring, and follow-up cadence
-4. Smartlead writes activity back to HubSpot via the reply-detection webhook
-
-### One Smartlead Campaign per Signal Type
-
-| Signal | Smartlead Campaign |
-|---|---|
-| Series B/C funding | `mento-signal-funding` |
-| New CHRO / CPO / VP People | `mento-signal-exec-hire` |
-| L&D job posting | `mento-signal-ld-posting` |
-| Headcount growth 20%+ | `mento-signal-headcount-growth` |
-
-Each campaign has 4-5 follow-up emails. Follow-ups are written manually, stored in Smartlead, and follow the same brand-voice rules. Only the first email is AI-personalised because that's where the trigger context lives. Follow-ups rotate through three angles (efficiency, proof, single-question close) per the Pyrashyut framework.
-
-## Quality Gates Before Send
-
-The Strong-Hook Gate filters drafts before they reach the SDR. Drafts that pass all five criteria land in Slack. Drafts that fail any criterion route to the manual review queue, no draft sent.
-
-Better to send no draft than a generic one to a senior People exec at a target account.
