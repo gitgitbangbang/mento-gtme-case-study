@@ -1,4 +1,4 @@
-# Part 3.2. Workflow Architecture (Text)
+# 3.2 Workflow Architecture (Text)
 
 Four stages. Monitor, Enrich, Score, Route + Draft. The SDR is the only human in the loop and they are the one who decides whether to send. The workflow does not send automatically.
 

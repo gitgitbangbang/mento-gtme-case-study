@@ -1,32 +1,34 @@
-# Part 2. Data Foundation Plan
+# 02. Data Foundation Plan
 
-## (a) Dedupe and merge logic
+> See [Clay Board Build](./clay_build/02_clay_board_build.md) for the full board spec.
 
-The dedupe runs as a one-off cleanup pass followed by a continuous workflow that catches new duplicates as they land.
+## (A) Dedupe and Merge Logic
 
-**Matching keys in priority order.** The brief points at ~5,000 contact-level records, so the matching is contact-first. Primary match on `email` (lowercase, strip plus-aliases like `+marketing` so the same buyer doesn't appear five times). Secondary match on `personal_linkedin_url` (normalised, lowercase, strip trailing slash, strip query params). Tertiary on first-name + last-name fuzzy match (Levenshtein) **scoped within the same company**, so John Smith at Anthropic only collapses with another John Smith at Anthropic, never with John Smith at Stripe.
+The dedupe runs as a one-off cleanup pass in priority order followed by a continuous workflow that catches new duplicates as they land.
 
-**Company-level grouping** runs in parallel so contacts attach to the right Company record. Primary match on `company_linkedin_url` (LinkedIn company IDs are stable even when domains aren't, and Clay has native enrichment that resolves a domain to its LinkedIn URL). Secondary on `normalized_company_domain` (lowercase, strip `www.`, root domain only, so `go.anthropic.com` collapses to `anthropic.com`). Tertiary on `normalized_company_name` with a tight Levenshtein threshold (strip suffixes like Inc/Ltd/LLC, strip punctuation) so Mento, Mento Inc, and Mento.co collapse without false-merging unrelated names.
+**Contact**. Primary match on `email` (lowercase, strip plus-aliases like `+marketing` so the same buyer doesn't appear five times). Secondary match on `personal_linkedin_url` (normalised, lowercase, strip trailing slash, strip query params). Tertiary on first-name + last-name fuzzy match (Levenshtein) **scoped within the same company**, so John Smith at Anthropic only collapses with another John Smith at Anthropic, never with John Smith at Stripe.
 
-**Survivorship rules.** The record with the most non-null fields wins on completeness. The record with activity in the last 90 days wins on freshness. The original `original_source` value inherits from the **oldest** record so attribution isn't rewritten by a merge. Lifecycle stage takes the most-advanced value (a Customer always beats an MQL). Engagement history is unioned across all merged records. ICP score and any computed fields are re-computed post-merge, never inherited.
+**Company**. Runs in parallel so contacts attach to the right Company record. Primary match on `company_linkedin_url` (LinkedIn company IDs are stable even when domains aren't, and Clay has native enrichment that resolves a domain to its LinkedIn URL). Secondary on `normalized_company_domain` (lowercase, strip `www.`, root domain only, so `go.anthropic.com` collapses to `anthropic.com`). Tertiary on `normalized_company_name` with a tight Levenshtein threshold (strip suffixes like Inc/Ltd/LLC, strip punctuation) so Mento, Mento Inc, and Mento.co collapse without false-merging unrelated names.
 
-**Audit trail.** Every merge writes a `dedup_audit` JSON property on the surviving HubSpot record with timestamp, merging tool, survivor ID, source IDs, and the matching rule that fired. Soft-deleted records archive to an SQL db (e.g. Supabase) log table for 90 days before hard delete, so a wrongful merge can be reversed.
+**Survivorship Rules**. The record with the most non-null fields wins on completeness. The record with activity in the last 90 days wins on freshness. The original `original_source` value inherits from the **oldest** record so attribution isn't rewritten by a merge. Lifecycle stage takes the most-advanced value (a Customer always beats an MQL). Engagement history is unioned across all merged records. ICP score and any computed fields are re-computed post-merge, never inherited.
 
-## (b) Enrichment sources and waterfall
+**Audit Trail**. Every merge writes a `dedup_audit` JSON property on the surviving HubSpot record with timestamp, merging tool, survivor ID, source IDs, and the matching rule that fired. Soft-deleted records archive to an SQL db (e.g. Supabase) log table for 90 days before hard delete, so a wrongful merge can be reversed.
 
-Three layers, sequenced. Firmographic first, then technographic, then contact-level with email verification at the end. Each step writes a confidence score. Below 70 = manual review queue. Conflicting data triggers an AI tiebreaker (Claude API or Mistral, called from Clay's native Use AI columns) that looks at the most recent press release or LinkedIn headcount badge to pick the truer value. Email is never pattern-guessed. Verified or skipped.
+## (B) Enrichment Sources and Waterfall
 
-All orchestrated in Clay or via Claude Code.
+Three layers, sequenced. Firmographic first, then technographic, then contact-level with email verification at the end. Email is never pattern-guessed. Verified or re routed.
 
-**Layer 1. Firmographic.** Apollo.io first inside Clay (native, paid via Clay credits) for breadth and cost-per-contact at Mento's volume. Ocean.io second for size, stage, and industry validation (US-focused, strong on Series B/C scale-ups which is exactly Mento's ICP). Crunchbase third, called inside Clay via the **Company Latest Funding** and **Company Valuation** enrichments (Clay credits), for funding history, latest round, and valuation. Crunchbase is the only reliable source for the "Series B/C funding in the last 90 days" trigger in Part 3. From there a trail waterfall inside Clay across **Claygent**, **Clearbit**, **Datagma**, **ZoomInfo**, **People Data Labs**, and **Lusha**, most consumable on Clay credits so a single procurement line covers the bulk of the stack.
+See [Clay Board Build](./clay_build/02_clay_board_build.md) for the orchestration detail.
 
-**Layer 2. Technographic.** BuiltWith for the prospect's HR tech stack (Workday, BambooHR, Lattice, Culture Amp). Strong proxy for L&D maturity and budget. A company already running Lattice is a higher-fit coaching buyer than one running a homegrown Notion doc.
+**Layer 1. Firmographic.** Apollo first inside Clay (native, paid via own API key) for breadth and cost-per-contact at Mento's volume. Ocean.io second for size, stage, and industry validation (US-focused, strong on Series B/C scale-ups which is exactly Mento's ICP). Crunchbase third, called inside Clay via the **Company Latest Funding** and **Company Valuation** enrichments (Clay credits), for funding history, latest round, and valuation. Crunchbase is a reliable source for the "Series B/C funding in the last 90 days" trigger in Part 3. From there a trail waterfall inside Clay across **Claygent**, **Prospeo**, **Clearbit**, **Datagma**, **People Data Labs**, and **Lusha**, most consumable on Clay credits so a single procurement line covers the bulk of the stack.
 
-**Layer 3. Contact-level.** LinkedIn data flows through Clay's **Person Current Company** and **Find Professional Profile** (LeadMagic) enrichments for org chart, exec changes, and role tenures. **FullEnrich**, **LeadMagic** (Find Work Email, Find Personal Email), **Prospeo**, and **FindyMail** run as the email-discovery waterfall when the primary lookup doesn't surface a working address. **LeadMagic Validate Email** does the final verification before any contact gets pushed outbound. Clay's **Find Contacts at Company** surfaces buying-committee contacts (CHRO, CPO, Head of L&D, Head of Talent) at no marginal sourcing effort once the Company record is enriched.
+**Layer 2. Technographic.** **BuiltWith** and **PredictLeads** to kick off for the prospect's HR tech stack waterfall (Workday, BambooHR, Lattice, Culture Amp etc). Strong proxy for L&D maturity and budget. A company already running Lattice is a higher-fit coaching buyer than one running a homegrown Notion doc.
 
-**Why these tools, not others.** Clay is the orchestration layer for one specific reason. It ships with 30+ enrichment integrations natively, and most of them are payable from a single Clay credit balance. A 9-source waterfall doesn't require 9 separate procurement processes, 9 vendor contracts, or 9 API key rotations. **Apollo, Clearbit, Datagma, ZoomInfo, People Data Labs, RocketReach, Surfe, LeadIQ, LeadMagic, Icypeas, Store Leads, and Crunchbase all run on Clay credits**, which means the GTM Engineer sets a credit budget once and the team gets a flexible 12-source stack underneath it. Tools outside Clay's credit system, including **BuiltWith** for technographic data, **Apify** for any LinkedIn pulls that go beyond Clay's native paths, **FullEnrich**, **Prospeo**, and **FindyMail**, get standalone API keys but wire into the same Clay table as HTTP-API columns, so the orchestration layer stays unified. The AI tiebreaker runs as a Clay **Use AI** column calling Claude or Mistral, which means even the LLM step lives one column away from the enrichment data, not in a separate service. That keeps the whole pipeline observable and editable from a single surface, which is the difference between v1 shipping in 2 weeks and v1 shipping in 8.
+**Layer 3. Contact-level.** LinkedIn data flows through Clay's **Person Current Company** and **Find Professional Profile** (**LeadMagic**) enrichments for org chart, exec changes, and role tenures. **FullEnrich**, **LeadMagic** (**Find Work Email**), **Prospeo**, and **FindyMail** run as the beginning of the email-discovery waterfall when the primary lookup doesn't surface a working address. **LeadMagic Validate Email** does the final verification before any contact gets pushed outbound. Clay's **Find Contacts at Company** surfaces buying-committee contacts (CHRO, CPO, Head of L&D, Head of Talent) at no marginal sourcing effort once the Company record is enriched.
 
-## (c) ICP scoring model
+**Why Clay and these APIs?** Clay is the orchestration layer for one specific reason. It ships with 30+ enrichment integrations natively, and most of them are payable from a single Clay credit balance. These APIs for coverage vs. cost.
+
+## (C) ICP Scoring Model
 
 Five dimensions, each scored 0-4. Max score 20. Score 16+ is High, 11-15 is Medium, 6-10 is Low, 5 or below is Park. Five dimensions instead of one weighted formula because each one is independently actionable. A high-Fit + low-Timing account belongs in nurture. A high-Timing + low-Fit account gets disqualified fast. A single composite score hides that nuance.
 
@@ -40,11 +42,11 @@ Five dimensions, each scored 0-4. Max score 20. Score 16+ is High, 11-15 is Medi
 
 **Dimension 5. Budget (0-4).** Funding stage as a proxy for spend approval. 4 = recent Series C or later ($50M+ raised in 18 months). 3 = Series B. 2 = late-stage Series A. 1 = bootstrapped profitable. 0 = pre-revenue or unknown. Budget captures whether a willing buyer can actually approve the spend.
 
-**Where this lives in HubSpot.** Each dimension stores as a custom Number property on the Company record. The total is a computed property. Routing rules in Part 3 fire off the total. When the model needs adjustment, the weights are config, not code, so updates ship in minutes instead of days.
+**Where this lives in HubSpot.** Each dimension stores as a custom 'Number' property on the Company record.
 
-## (d) Lifecycle stage architecture
+## (D) Lifecycle Stage Architecture
 
-Current state has contacts scattered across Lead, MQL, and Customer with no rules. The fix puts deterministic entry and exit rules on each stage and adds the Expansion and Dormant stages that don't exist today.
+This fix puts deterministic entry and exit rules on each stage and adds the Expansion and Dormant stages that don't exist today.
 
 **Stage architecture (left to right).** Subscriber → Lead → MQL → SQL → Opportunity → Customer → Expansion / Dormant.
 
@@ -64,13 +66,13 @@ Current state has contacts scattered across Lead, MQL, and Customer with no rule
 
 **Dormant.** Entry: cohort complete + no renewal + 90-day engagement silence. Exit back to Lead: any re-engagement event (form fill, exec change detected, signal trigger fires).
 
-**Why this architecture.** Every stage has a deterministic entry and exit rule so transitions aren't vibes. The ICP score is the gate between Subscriber → Lead → MQL, which means lifecycle finally means something instead of being a label. The Customer → Expansion stage is the one most SaaS companies forget. Adding it turns expansion into a measurable motion rather than a side effect.
+**Why this architecture.** Every stage has a deterministic entry and exit rule so transitions aren't vibes.
 
 ## Data Model
 
-Live Version via GitHub Pages 📊: [data_model.html](https://gitgitbangbang.github.io/mento-gtme-case-study/02_data_foundation/data_model.html)
+GitHub Pages Version 📊: https://gitgitbangbang.github.io/mento-gtme-case-study/02_data_foundation/data_model.html
 
-Static SQL Render:
+**Static SQL Render**
 
 ```sql
 -- HubSpot data model: six entities, Company is the spine

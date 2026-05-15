@@ -1,4 +1,4 @@
-# Part 3.4. Signal Scoring Framework
+# 3.4 Signal Scoring Framework
 
 The four brief signals are scored against three multipliers. Output is one number per signal event, combined with the company's `icp_total` (from Part 2) at the routing stage to assign a tier.
 
@@ -51,7 +51,7 @@ When buyer_proximity = 0, the signal cannot route to a rep. It goes to the **Dis
 | **Discovery** | signal_score = 0 (no buyer contact) AND icp_total >= 11 | Trigger Find Contacts at Company. Rescore on next pass. | (no SDR alert) | Within 6h of signal fire |
 | Park | icp_total < 11 | No alert | (none) | Rescore monthly |
 
-### Digest Format
+### Digest Format (Slack)
 
 A **digest** is a single batched Slack message containing all signals of that tier from the period, sorted by score (highest first).
 
@@ -67,7 +67,17 @@ Two-step logic:
 1. **Primary.** If `company.assigned_owner` exists in HubSpot, route to that SDR.
 2. **Fallback.** If unowned, round-robin between SDR 1 and SDR 2. On assignment, write the owner back to HubSpot so subsequent signals on the same Company route to the same SDR.
 
-> **Open question (Week 1 discovery).** How are the two SDRs currently splitting accounts? Geography, segment (PLG vs sales-led), industry, alphabetical, or unstructured? The right-rep logic above is a sensible default for v1, but if the team already has an established split, the routing should mirror it. Asks for the discovery list in Part 1, Q2.
+> **🚩 Open question (Week 1 discovery).** How are the two SDRs currently splitting accounts? Geography, segment (PLG vs sales-led), industry, alphabetical, or unstructured? The right-rep logic above is a sensible default for v1, but if the team already has an established split, the routing should mirror it. Asks for the discovery list in Part 1, Q2.
+
+## Self-Improvement Loop
+
+The four base weights are not fixed forever. They recalibrate monthly based on what the SDRs actually do at the HITL Send / Edit / Skip step in Stage 4 of the workflow.
+
+| Behaviour Over 30 Days | Action |
+|---|---|
+| SDR Skip rate > 40% on a given signal type | base_weight drops by 0.5 (signal is firing too noisily) |
+| SDR Send-no-edit rate > 70% | base_weight holds or rises by 0.25 (signal is producing high-quality drafts) |
+| Find Contacts at Company sub-task success rate < 50% | Flag the signal source for review (might be detecting accounts where the buyer contact is genuinely hard to find) |
 
 ## Worked Examples
 
@@ -130,15 +140,3 @@ Two-step logic:
 | icp_total | 16 |
 | **Tier** | **Discovery** (signal_score = 0 AND icp_total >= 11) |
 | Action | Find Contacts at Company fires within 6h. New contact lands in Contacts table. Signal rescores on the next pass. If a CHRO is added with no engagement, recalculated score = 4 × 0.71 × 0.9 = **2.56**, routes to P2 branch. |
-
-## Self-Improvement Loop
-
-The four base weights are not fixed forever. They recalibrate monthly based on what the SDRs actually do at the HITL Send / Edit / Skip step in Stage 4 of the workflow.
-
-| Behaviour over 30 days | Action |
-|---|---|
-| SDR Skip rate > 40% on a given signal type | base_weight drops by 0.5 (signal is firing too noisily) |
-| SDR Send-no-edit rate > 70% | base_weight holds or rises by 0.25 (signal is producing high-quality drafts) |
-| Find Contacts at Company sub-task success rate < 50% | flag the signal source for review (might be detecting accounts where the buyer contact is genuinely hard to find) |
-
-Routing thresholds are config rows in Clay, not code, so updates ship in minutes. Recalibration runs on a Trigger.dev scheduled job, monthly.

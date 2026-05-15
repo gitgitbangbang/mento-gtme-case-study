@@ -1,4 +1,4 @@
-# Part 3.1. Mento ICP and Intent Signals
+# 3.1 ICP and Intent Signals
 
 ## ICP
 
@@ -8,10 +8,10 @@
 |---|---|
 | Headcount | 500 to 5,000 employees |
 | Stage | Series B/C or later (includes late Series A with $50M+ raised) |
-| Sector | B2B tech: SaaS, AI-native, cloud infrastructure, dev tools, fintech-SaaS, Sales/Marketing and CS SaaS |
+| Sector | B2B tech: SaaS, AI-native, cloud infrastructure, dev tools, fintech-SaaS, Sales/Marketing & CS SaaS |
 | Geography | US-headquartered, English-speaking |
 | Estimated ARR | $20M to $300M |
-| HQ Density | NYC, SF, Seattle, Austin, Boston (where Mento's coach roster has bench depth) |
+| HQ density | NYC, SF, Seattle, Austin, Boston (where Mento's coach roster has bench depth) |
 
 ### Technographics (Positive)
 
@@ -23,8 +23,8 @@
 
 ### Technographics (Negative)
 
-- ATS-only without any performance or learning platform (signals basic HR ops, no L&D maturity)
-- SAP SuccessFactors or Oracle HCM only (traditional enterprise pattern, long sales cycle)
+- ATS-only without any performance or learning platform (basic HR ops, no L&D maturity)
+- SAP SuccessFactors or Oracle HCM only (traditional enterprise pattern)
 - No performance management tool of any kind (under-invested in People function)
 
 ### Org Signals
@@ -34,7 +34,7 @@
 - Existing internal manager training program (signals they take L&D seriously, want a partner)
 - Recent reorg, restructuring, or geographic expansion announcement
 - OKRs or company-wide goals mentioning leadership development, manager effectiveness, or retention
-- Mid-management title proliferation (lots of "Manager", "Senior Manager", "Lead" in role tree)
+- Mid-management title proliferation in role tree
 
 ### Buying Committee
 
@@ -48,17 +48,17 @@
 ### Negative ICP
 
 - Sub-200 headcount (no L&D budget, founder-led management still works)
-- Traditional non-tech enterprises (long procurement, low cultural fit, wrong coach pool)
-- Agencies and services firms (different unit economics, coaching is overhead not investment)
+- Traditional non-tech enterprises (long procurement, low cultural fit)
+- Agencies and services firms (different unit economics)
 - Regulated finance and government (sales cycle kills the motion at Mento's stage)
-- Recently failed coaching pilot at a competitor (rebuild trust takes 18+ months, defer)
-- Companies with active mass RIFs in management ranks (budget is freezing, not expanding)
+- Recently failed coaching pilot at a competitor (rebuild trust takes 18+ months)
+- Companies with active mass RIFs in management ranks (budget is freezing)
 
 ---
 
 ## Eleven-Signal Portfolio
 
-Four from the brief plus seven additional. Diversified across six categories so no single source failure kills the engine. Weights are graded **P1 (4) High Conversion**, **P2 (3) Strong**, **P3 (2) Supporting** with routing implications defined in Part 3.4.
+Four from the brief plus seven additional. Diversified across six categories so no single source failure kills the engine.
 
 ### Original Four (from the Brief)
 
@@ -85,17 +85,17 @@ Four from the brief plus seven additional. Diversified across six categories so 
 
 ## Signal Portfolio Coverage
 
-Brief's four signals plus the seven above gives an **11-signal portfolio** across six categories. Diversified enough that no single source failure kills the engine.
+Brief's four plus seven additional gives an 11-signal portfolio across six categories. Diversified enough that no single source failure kills the engine.
 
 | Category | Signals | Coverage |
 |---|---|---|
 | Funding inflection | Series B/C funding | 1 signal |
 | Headcount inflection | 20%+ growth, manager-hire surge | 2 signals |
 | Exec change | New CHRO/CPO/VP People | 1 signal |
-| Job-posting intent | L&D job postings, Manager Development roles | 2 signals |
+| Job-posting intent | L&D postings, Manager Development roles | 2 signals |
 | Org disruption | RIF with management retention, manager promotion events | 2 signals |
 | Public and social intent | Exec LinkedIn engagement, Glassdoor sentiment drop | 2 signals |
-| Customer expansion | Headcount growth post-cohort, new department head | 1 signal |
+| Customer expansion | Headcount post-cohort, new dept head | 1 signal |
 
 ## P1 Signal Distribution
 

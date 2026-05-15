@@ -1,4 +1,4 @@
-# Part 1. Diagnose & Prioritize
+# 01. Diagnose & Prioritize
 
 ## Q1. The first three things, and why in that order
 
@@ -38,9 +38,17 @@ Assuming no delays in immediate tech stack access, and with the understanding th
 
 **6. Rep account split.** How are the two SDRs splitting effort today? Are accounts owned by named rep, segment, geography, or unassigned? What's the routing logic when a signal fires on an unowned account? This is the spec for Priority 3's routing rules.
 
-**Conversations to source this.** Jamie Albers (Co-CEO) on what "working in 60 days" means in numbers. Both SDRs on where time leaks and which signals they intuit today. Head of Coach Ops on cohort onboarding and expansion patterns. Marketing lead on attribution and spend. Three named customers (Anthropic, Vercel, Brex) on how they bought and what triggered the conversation.
+**7. What "working in 60 days" means in numbers.** Both SDRs on where time leaks and which signals they intuit today. Head of Coach Ops on cohort onboarding and expansion patterns. Marketing lead on attribution and spend. Three named customers (Anthropic, Vercel, Brex) on how they bought and what triggered the conversation.
 
-**Parallel audits.** HubSpot data quality (dupe rate, null rate per field, lifecycle distribution, deal velocity by source). ICP retrospective on closed-won. Target account list staleness check.
+**8. Parallel audits.** HubSpot data quality (dupe rate, null rate per field, lifecycle distribution, deal velocity by source). ICP retrospective on closed-won. Target account list staleness check.
+
+**9. Exact HubSpot tier and seat count**
+
+**10. SDR quota and segmentation**
+
+**11. Marketing budget and current spend mix**
+
+**12. Procurement and security review obligations for enterprise buyers**
 
 ---
 
@@ -51,7 +59,3 @@ Assuming no delays in immediate tech stack access, and with the understanding th
 **SDR adoption.** Mitigation is shipping with them, measuring their skip and edit rates per signal weekly, and feeding that back into scoring v2.
 
 These are the two points that first come to mind. Beyond this, I legitimately see no barrier to getting something working in 60 days. 60 days is more than fair to stand up a v1 working outbound system.
-
----
-
-_Assumptions register lives at 00. Pre-Flight & Assumptions._
