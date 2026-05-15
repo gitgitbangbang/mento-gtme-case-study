@@ -1,14 +1,5 @@
 # Submission Index — Mento GTM Engineer Case Study
 
-**Candidate.** Jared Burke
-**Date.** May 2026
-**Live submission.** [Mento: GTM Engineer Case Study (Notion)](https://www.notion.so/3607642d57d781ce9c16f0541f6992ef) — reviewer-facing canonical page.
-**Code home.** [github.com/gitgitbangbang/mento-gtme-case-study](https://github.com/gitgitbangbang/mento-gtme-case-study) (this repo).
-
-This page is the one-stop index of everything I've shipped. Use the Reading Order below if you're skimming; use the full Artifact Map if you want every file in one place.
-
----
-
 ## Status
 
 | Item | Status |
@@ -105,11 +96,3 @@ For each deliverable, the engagement model that would make most sense if Mento w
 | Part 1 strategy + Part 2 data plan | **Consultancy** — strategic guidance, Mento implements |
 | Part 2 Clay build (data foundation) | **Done-For-You** — Pyrashyut builds + hands off |
 | Part 3 signal engine (code build) | **Hybrid** — strategy + execution; ongoing maintenance + recalibration of base weights |
-
----
-
-## Contact
-
-**Jared Burke** — jared@pyrashyut.com — [pyrashyut.com](https://pyrashyut.com)
-
-Pyrashyut LLC | GTM Engineering As A Service | Tbilisi, Georgia
