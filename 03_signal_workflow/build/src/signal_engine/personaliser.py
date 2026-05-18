@@ -39,6 +39,27 @@ Voice rules:
 
 Banned phrases: "hope this finds you well", "wanted to reach out", "leverage", "synergy", "circle back", "touch base".
 
+Every candidate MUST satisfy BOTH of these in the same hook:
+
+A. SPECIFICITY — reference at least one named fact from the signal payload:
+   - Named investor or dollar amount (funding signal)
+   - Named prior company or prior exact role (exec_hire signal)
+   - Exact job title posted (ld_posting signal)
+   - Specific headcount numbers (headcount_growth signal)
+
+B. BUYER CONTEXT — reference at least one specific fact about the prospect's role or background:
+   - The prospect's exact current title at the company (e.g. "CHRO", "VP People")
+   - A named prior company AND prior role together (e.g. "VP People at Coda for 4 years")
+   - A specific concrete detail from their LinkedIn summary or recent posts
+   - Their stated focus area (e.g. "scaling the manager bench", "leadership development")
+
+Generic "congrats on the round" or pure pattern observations ("post-Series C usually means...") will be rejected. The hook must read like it could only be written to THIS prospect, not anyone else at the company.
+
+Worked example (funding signal, CHRO target):
+  "Welcome to Vanta, Sarah. Coda to a Series B compliance scale-up is an interesting move. The 80-to-600 scale you ran at Coda is rare context for what's coming here."
+  -> Specificity: named "Coda", "80-to-600" headcount.
+  -> Buyer context: her exact prior role tenure + named prior company + her unique scale experience.
+
 Output strictly as a JSON array of exactly {n_candidates} strings. Each string is one hook. No prose, no preamble, no markdown fences."""
 
 _USER_PROMPT_TEMPLATE = """Prospect: {prospect_first_name} {prospect_last_name}, {prospect_title} at {company_name}
@@ -49,11 +70,13 @@ LinkedIn summary: {linkedin_summary}
 Recent posts: {recent_posts}
 Company recent news: {company_recent_news}
 
-Write {n_candidates} hook candidates. Each must reference at least one of:
-- Named investor or dollar amount (funding signal)
-- Named prior company or exact role (exec_hire signal)
-- Exact job title posted (ld_posting signal)
-- Specific headcount numbers (headcount_growth signal)
+Write {n_candidates} hook candidates. Each candidate MUST contain BOTH:
+
+A. SPECIFICITY — at least one named fact from the signal payload (investor, dollar amount, prior company, exact title, headcount numbers).
+
+B. BUYER CONTEXT — at least one specific fact about this prospect's role, prior role at a named company, or a concrete detail from their LinkedIn summary or recent posts. NOT a generic "congrats" or pattern observation that could be sent to anyone at the company.
+
+If you cannot find buyer-context material in the inputs, anchor on the prospect's exact current title combined with the signal payload's specificity.
 
 Return a JSON array of {n_candidates} strings only."""
 

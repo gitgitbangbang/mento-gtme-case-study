@@ -2,10 +2,8 @@
 
 > Mento has a real customer base, real buying signals, and real first-party data. What it doesn't have is the infrastructure to turn that into a scalable, repeatable revenue engine. This submission lays out what I'd build, in what order, and why.
 
-**Candidate.** Jared Burke
-**Date.** May 2026
 **Code home.** https://github.com/gitgitbangbang/mento-gtme-case-study
-**Live submission (Notion master page):** https://www.notion.so/pyrashyut/Mento-GTM-Engineer-Case-Study-3607642d57d781ce9c16f0541f6992ef
+**Live submission (Notion master page):** (https://jaredburke-mento.notion.site)
 
 ## Status
 
@@ -73,8 +71,3 @@ uv run python -m signal_engine.run --signal funding --company linear
 
 See `03_signal_workflow/build/README.md` for the full breakdown and a 7-step verification walkthrough.
 
-## Engagement Model Mapping
-
-- Part 1 + Part 2 plan = Consultancy
-- Part 2 Clay = Done-For-You
-- Part 3 engine = Hybrid
