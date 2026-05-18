@@ -22,6 +22,7 @@ from __future__ import annotations
 
 import argparse
 import logging
+import os
 import sys
 from dataclasses import dataclass
 from datetime import UTC, datetime
@@ -111,6 +112,16 @@ def main(argv: list[str] | None = None) -> int:
         help="Skip the HITL prompt; auto-treat as 'send'. Always on under --all.",
     )
     parser.add_argument(
+        "--api-key",
+        dest="api_key",
+        default=None,
+        help=(
+            "Anthropic API key. If set, overrides both the ANTHROPIC_API_KEY "
+            "shell environment variable and any value in .env. Highest "
+            "precedence."
+        ),
+    )
+    parser.add_argument(
         "--verbose",
         "-v",
         action="store_true",
@@ -129,6 +140,10 @@ def main(argv: list[str] | None = None) -> int:
     # override=True so a value in .env wins over an empty ANTHROPIC_API_KEY
     # that some shells / launchers export by default.
     load_dotenv(override=True)
+    # --api-key beats both .env and the shell env var. Done after load_dotenv
+    # so the override always wins, never gets clobbered.
+    if args.api_key:
+        os.environ["ANTHROPIC_API_KEY"] = args.api_key
     _configure_logging(verbose=args.verbose)
 
     if args.run_all:

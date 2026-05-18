@@ -306,3 +306,45 @@ def test_missing_signal_and_company_errors(
         run.main(["--signal", "funding"])
     with pytest.raises(SystemExit):
         run.main(["--company", "linear"])
+
+
+def test_api_key_flag_overrides_environment(
+    stubbed_pipeline: Path,
+    capsys: pytest.CaptureFixture[str],
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """--api-key flag should win over the ANTHROPIC_API_KEY shell env var."""
+    _pin_today(monkeypatch, date(2026, 5, 14))
+    # Seed the env var with one value; the flag should override it.
+    monkeypatch.setenv("ANTHROPIC_API_KEY", "env-key-should-lose")
+
+    # Capture the api_key the stubbed Anthropic constructor sees so we can
+    # verify the flag value reached the SDK call site.
+    captured_keys: list[str] = []
+
+    class _RecordingStub:
+        def __init__(self, *, api_key: str = "", **_kwargs: Any) -> None:
+            captured_keys.append(api_key)
+            self.messages = _StubMessages(_HOOKS_JSON)
+
+    monkeypatch.setattr(personaliser, "Anthropic", _RecordingStub)
+    monkeypatch.setattr(gate, "Anthropic", _make_stub_factory(_GATE_PASS_JSON))
+    monkeypatch.setattr(assembler, "Anthropic", _make_stub_factory(_POLISHED_DRAFT))
+
+    flag_key = "flag-key-should-win-sk-ant-api03-test"
+    exit_code = run.main(
+        [
+            "--signal", "funding",
+            "--company", "linear",
+            "--non-interactive",
+            "--api-key", flag_key,
+        ]
+    )
+    assert exit_code == 0
+    # The personaliser instantiated _RecordingStub with the flag value, not
+    # the env-var value.
+    assert flag_key in captured_keys, (
+        f"--api-key flag did not reach Anthropic constructor; "
+        f"saw keys={captured_keys!r}"
+    )
+    assert "env-key-should-lose" not in captured_keys

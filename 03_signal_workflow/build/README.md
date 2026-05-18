@@ -120,23 +120,13 @@ The `rm -rf ~/mento-test` line clears any previous clone at that path so re-runn
 
 **Why it matters.** Cloning into a fresh, dedicated directory guarantees you're testing the latest `main` (not a stale local checkout).
 
-### Step 3 — Set your Anthropic API key in this shell
+### Step 3 — Grab your Anthropic API key
 
-Replace `YOUR_KEY_HERE` with your actual key (from [console.anthropic.com](https://console.anthropic.com/settings/keys)), then paste the line:
+You'll paste your key inline on the run command in Step 6. No setup needed here — just have the key on your clipboard.
 
-```bash
-export ANTHROPIC_API_KEY=YOUR_KEY_HERE
-```
+Where to find it: [console.anthropic.com → Settings → API keys](https://console.anthropic.com/settings/keys). Copy a working key (starts with `sk-ant-api03-`).
 
-Verify (paste as-is):
-
-```bash
-test "${#ANTHROPIC_API_KEY}" -gt 50 && echo "OK: key is set (${#ANTHROPIC_API_KEY} chars)" || echo "FAIL: replace YOUR_KEY_HERE with your real key and try again"
-```
-
-**Expected.** `OK: key is set (108 chars)` (length will be around 100). If you see `FAIL`, you forgot to replace the placeholder — re-run the export line with your real key.
-
-**Why it matters.** The key stays in this shell session only — never written to disk, never committed. Every subsequent `uv run ...` command in this terminal will pick it up automatically.
+**Why it matters.** The key never gets written to disk anywhere. It's passed only as a one-time CLI argument; nothing in your shell history, nothing in the repo, nothing in `.env`.
 
 ### Step 4 — Install dependencies
 
@@ -164,8 +154,10 @@ uv run pytest -q
 
 ### Step 6 — Run one signal end-to-end against the live Claude API
 
+Replace `YOUR_KEY_HERE` with the key you copied in Step 3, then paste the whole line:
+
 ```bash
-uv run python -m signal_engine.run --signal exec_hire --company vanta --non-interactive
+uv run python -m signal_engine.run --api-key YOUR_KEY_HERE --signal exec_hire --company vanta --non-interactive
 ```
 
 **Plain English.** This is the demo. Walks Vanta's new CHRO hire (Sarah Chen, ex-Coda VP People, scaled that team 80→600) all the way through the five-stage pipeline: detection → enrichment → scoring → routing → AI drafting. Makes five real calls to Claude (one to generate three hook candidates, three to evaluate them, one to polish the final draft). Roughly ~$0.10 in API spend per run on your Anthropic account.
@@ -191,8 +183,10 @@ uv run python -m signal_engine.run --signal exec_hire --company vanta --non-inte
 
 ### Step 6b — Run all four signals in sequence (the variety pass)
 
+Same key from Step 3, replace `YOUR_KEY_HERE` again:
+
 ```bash
-uv run python -m signal_engine.run --all --non-interactive
+uv run python -m signal_engine.run --api-key YOUR_KEY_HERE --all --non-interactive
 ```
 
 **Plain English.** Cycles through all four canonical signal/company pairs: funding/linear, exec_hire/vanta, ld_posting/ramp, headcount_growth/retool. `--all` implies `--non-interactive`. About 60 seconds and ~$0.40 in API spend per invocation.
@@ -247,10 +241,12 @@ Roughly 10 minutes of your time. The only thing taken on faith is that the mocke
 Available signals: `funding`, `exec_hire`, `ld_posting`, `headcount_growth`.
 Available companies: `linear`, `vanta`, `ramp`, `retool`.
 
+Replace `YOUR_KEY_HERE` with your key on each command:
+
 ```bash
-uv run python -m signal_engine.run --signal funding --company linear
-uv run python -m signal_engine.run --signal ld_posting --company ramp
-uv run python -m signal_engine.run --signal headcount_growth --company retool
+uv run python -m signal_engine.run --api-key YOUR_KEY_HERE --signal funding --company linear
+uv run python -m signal_engine.run --api-key YOUR_KEY_HERE --signal ld_posting --company ramp
+uv run python -m signal_engine.run --api-key YOUR_KEY_HERE --signal headcount_growth --company retool
 ```
 
 Each produces a different tier (Linear=P1, Vanta=P2, Ramp=P2, Retool=P3) so you can see routing diverge in practice. Captured example outputs from a recent live run sit in [`examples/`](./examples/).
@@ -265,6 +261,7 @@ Drop `--non-interactive` and you'll get the `[s]end / [e]dit / [k]ip` prompt at 
 
 ### Useful Flags
 
+- `--api-key sk-ant-...` — Anthropic API key. Highest precedence (beats both `ANTHROPIC_API_KEY` env var and `.env` file). Recommended for the reviewer walkthrough.
 - `--all` — run all four canonical signal/company pairs in sequence with a summary table. Implies `--non-interactive`. ~60 seconds, ~$0.40 API.
 - `--non-interactive` — skip the HITL prompt (treats every draft as Send). For CI / smoke tests.
 - `--no-polish` — skip the assembler's final Claude voice pass. Saves one API call per run.
