@@ -78,8 +78,3 @@ See `03_signal_workflow/build/README.md` for the full breakdown and a 7-step ver
 - Part 1 + Part 2 plan = Consultancy
 - Part 2 Clay = Done-For-You
 - Part 3 engine = Hybrid
-
-## Contact
-
-Jared Burke. jared@pyrashyut.com. pyrashyut.com.
-Pyrashyut LLC | GTM Engineering As A Service | Tbilisi, Georgia
