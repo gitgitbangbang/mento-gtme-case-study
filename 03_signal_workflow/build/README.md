@@ -91,62 +91,42 @@ What this walkthrough proves to you:
 - The AI layer (hook generation, Strong-Hook Gate, draft assembly) is real Claude API, not pre-canned strings
 - Every signal event leaves a complete audit trail you can read
 
-### Step 1 — Make `uv` available
+### Step 1 — Install `uv` (the Python package manager)
 
 ```bash
+curl -LsSf https://astral.sh/uv/install.sh | sh
 export PATH="$HOME/.local/bin:$PATH"
 uv --version
 ```
 
-**Plain English.** `uv` is the Python package manager this project uses (think `npm` for JavaScript). The first line tells your terminal where to find it; the second confirms it's installed.
+**Expected.** `uv 0.11.x` (or similar).
 
-**Expected.** Something like `uv 0.11.14`. If `command not found`, install with `curl -LsSf https://astral.sh/uv/install.sh | sh` and re-run.
+If `uv` was already installed, the first line is a safe no-op. The `export PATH` line ensures it's reachable from your current shell session.
 
-**Why it matters.** Modern Python projects pin their dependencies via a lockfile. `uv` reads that lockfile and rebuilds the exact environment the developer tested against — that's what kills "works on my laptop" mystery bugs.
+**Why it matters.** `uv` reads the repo's lockfile and rebuilds the exact Python environment the developer tested against. No "works on my machine" surprises.
 
-### Step 2 — Go to the build directory
+### Step 2 — Clone the repo (fresh every time)
 
 ```bash
-cd 03_signal_workflow/build
+rm -rf ~/mento-test
+git clone https://github.com/gitgitbangbang/mento-gtme-case-study.git ~/mento-test
+cd ~/mento-test/03_signal_workflow/build
 pwd
 ```
 
-(From the root of your repo clone.)
+**Expected.** `pwd` prints a path ending in `/mento-test/03_signal_workflow/build`.
 
-**Plain English.** Navigate into the runnable Python project. The signal engine lives at `03_signal_workflow/build/`, alongside the case-study prose docs in `03_signal_workflow/`.
+The `rm -rf ~/mento-test` line clears any previous clone at that path so re-running this walkthrough is idempotent. It's safe — it only touches `~/mento-test`. If you'd rather use a different directory name, change all three lines to match.
 
-**Expected.** `pwd` prints the absolute path ending in `/03_signal_workflow/build`.
+**Why it matters.** Cloning into a fresh, dedicated directory guarantees you're testing the latest `main` (not a stale local checkout).
 
-**Why it matters.** All subsequent commands run from inside this folder. The Python imports and the `.env` file are scoped here.
+### Step 3 — Grab your Anthropic API key
 
-### Step 3 — Drop your API key into `.env`
+You'll paste your key inline on the run command in Step 6. No setup needed here — just have the key on your clipboard.
 
-Run **one** of these two options. Don't copy the prose between them or the `# verify` block into your shell — each code block below is meant to be pasted on its own.
+Where to find it: [console.anthropic.com → Settings → API keys](https://console.anthropic.com/settings/keys). Copy a working key (starts with `sk-ant-api03-`).
 
-**Option A** — edit `.env` in your editor and paste the key after the `=`:
-
-```bash
-cp .env.example .env
-open -e .env
-```
-
-**Option B** — write the key directly via `printf` (replace `<your-key-here>` with your real key, drop the angle brackets):
-
-```bash
-printf 'ANTHROPIC_API_KEY=%s\n' '<your-key-here>' > .env
-```
-
-Then verify (paste this exactly as shown):
-
-```bash
-test $(wc -c < .env) -gt 50 && echo "OK: key present" || echo "FAIL: paste your key in"
-```
-
-**Plain English.** The signal engine talks to Anthropic's Claude API to generate the email hooks and run the polish pass. It reads the key from a file called `.env`, which is gitignored — it never gets committed.
-
-**Expected.** `OK: key present`.
-
-**Why it matters.** Confirms the AI calls are real — they hit YOUR Anthropic account. You'll see the cost in your Anthropic console afterwards (roughly $0.02 per run).
+**Why it matters.** The key never gets written to disk anywhere. It's passed only as a one-time CLI argument; nothing in your shell history, nothing in the repo, nothing in `.env`.
 
 ### Step 4 — Install dependencies
 
@@ -166,19 +146,21 @@ uv sync
 uv run pytest -q
 ```
 
-**Plain English.** Runs 57 automated tests covering the deterministic parts of the engine — the scoring math, the P1/P2/P3 routing logic, the gate's banned-phrase and length checks, the audit log format, and a full end-to-end run with a stubbed Claude client. No network calls, fast.
+**Plain English.** Runs 60 automated tests covering the deterministic parts of the engine — the scoring math, the P1/P2/P3 routing logic, the gate's banned-phrase and length checks, the audit log format, and a full end-to-end run with a stubbed Claude client. No network calls, fast.
 
-**Expected.** `57 passed in <2s`.
+**Expected.** `60 passed in <2s`.
 
 **Why it matters.** Tests passing means the rules in the Part 3 docs (the scoring formula, the routing tiers) are wired up correctly in code. Coverage on the deterministic modules is ~94%; every multiplier, tier boundary, and gate check has a test guarding it.
 
 ### Step 6 — Run one signal end-to-end against the live Claude API
 
+Replace `YOUR_KEY_HERE` with the key you copied in Step 3, then paste the whole line:
+
 ```bash
-uv run python -m signal_engine.run --signal exec_hire --company vanta --non-interactive
+uv run python -m signal_engine.run --api-key YOUR_KEY_HERE --signal exec_hire --company vanta --non-interactive
 ```
 
-**Plain English.** This is the demo. Walks Vanta's new CHRO hire (Sarah Chen, ex-Coda VP People, scaled that team 80→600) all the way through the five-stage pipeline: detection → enrichment → scoring → routing → AI drafting. Makes five real calls to Claude (one to generate three hook candidates, three to evaluate them, one to polish the final draft).
+**Plain English.** This is the demo. Walks Vanta's new CHRO hire (Sarah Chen, ex-Coda VP People, scaled that team 80→600) all the way through the five-stage pipeline: detection → enrichment → scoring → routing → AI drafting. Makes five real calls to Claude (one to generate three hook candidates, three to evaluate them, one to polish the final draft). Roughly ~$0.10 in API spend per run on your Anthropic account.
 
 `--non-interactive` skips the human-in-the-loop prompt at the end and auto-treats every draft as Send. Drop the flag to get the interactive `[s]end / [e]dit / [k]ip` prompt.
 
@@ -201,8 +183,10 @@ uv run python -m signal_engine.run --signal exec_hire --company vanta --non-inte
 
 ### Step 6b — Run all four signals in sequence (the variety pass)
 
+Same key from Step 3, replace `YOUR_KEY_HERE` again:
+
 ```bash
-uv run python -m signal_engine.run --all --non-interactive
+uv run python -m signal_engine.run --api-key YOUR_KEY_HERE --all --non-interactive
 ```
 
 **Plain English.** Cycles through all four canonical signal/company pairs: funding/linear, exec_hire/vanta, ld_posting/ramp, headcount_growth/retool. `--all` implies `--non-interactive`. About 60 seconds and ~$0.40 in API spend per invocation.
@@ -257,10 +241,12 @@ Roughly 10 minutes of your time. The only thing taken on faith is that the mocke
 Available signals: `funding`, `exec_hire`, `ld_posting`, `headcount_growth`.
 Available companies: `linear`, `vanta`, `ramp`, `retool`.
 
+Replace `YOUR_KEY_HERE` with your key on each command:
+
 ```bash
-uv run python -m signal_engine.run --signal funding --company linear
-uv run python -m signal_engine.run --signal ld_posting --company ramp
-uv run python -m signal_engine.run --signal headcount_growth --company retool
+uv run python -m signal_engine.run --api-key YOUR_KEY_HERE --signal funding --company linear
+uv run python -m signal_engine.run --api-key YOUR_KEY_HERE --signal ld_posting --company ramp
+uv run python -m signal_engine.run --api-key YOUR_KEY_HERE --signal headcount_growth --company retool
 ```
 
 Each produces a different tier (Linear=P1, Vanta=P2, Ramp=P2, Retool=P3) so you can see routing diverge in practice. Captured example outputs from a recent live run sit in [`examples/`](./examples/).
@@ -275,6 +261,7 @@ Drop `--non-interactive` and you'll get the `[s]end / [e]dit / [k]ip` prompt at 
 
 ### Useful Flags
 
+- `--api-key sk-ant-...` — Anthropic API key. Highest precedence (beats both `ANTHROPIC_API_KEY` env var and `.env` file). Recommended for the reviewer walkthrough.
 - `--all` — run all four canonical signal/company pairs in sequence with a summary table. Implies `--non-interactive`. ~60 seconds, ~$0.40 API.
 - `--non-interactive` — skip the HITL prompt (treats every draft as Send). For CI / smoke tests.
 - `--no-polish` — skip the assembler's final Claude voice pass. Saves one API call per run.
