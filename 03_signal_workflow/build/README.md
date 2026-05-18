@@ -31,6 +31,8 @@ Roughly **65% real working code, 35% mocked**. Mocking is concentrated at extern
 
 Every stub line carries a `# STUB:` comment with a one-line note on what would replace it.
 
+For the path-to-production view — exactly which functions get swapped, what the production code would look like, and what stays unchanged — see [`STUB_SWAP_POINTS.md`](./STUB_SWAP_POINTS.md).
+
 ## What The Reviewer Sees
 
 ```bash
