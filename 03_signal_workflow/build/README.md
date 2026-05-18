@@ -17,7 +17,7 @@ Roughly **65% real working code, 35% mocked**. Mocking is concentrated at extern
 | Draft Assembly Agent | Real Claude API call |
 | CLI HITL prompt | Real interactive `[s]end / [e]dit / [k]ip` |
 | Audit logger | Writes JSON to `audit/` per signal event |
-| Tests | pytest, 45 tests, 94% coverage on the deterministic core |
+| Tests | pytest, 65 tests, 94% coverage on the deterministic core |
 
 ### Mocked (with `# STUB:` comments)
 
@@ -146,9 +146,9 @@ uv sync
 uv run pytest -q
 ```
 
-**Plain English.** Runs 60 automated tests covering the deterministic parts of the engine — the scoring math, the P1/P2/P3 routing logic, the gate's banned-phrase and length checks, the audit log format, and a full end-to-end run with a stubbed Claude client. No network calls, fast.
+**Plain English.** Runs 65 automated tests covering the deterministic parts of the engine — scoring math, P1/P2/P3 routing logic, the gate's banned-phrase and length checks, the audit log format, the assembler's 70-word cap enforcement (with polish retry), and a full end-to-end run with a stubbed Claude client. No network calls, fast.
 
-**Expected.** `60 passed in <2s`.
+**Expected.** `65 passed in <2s`.
 
 **Why it matters.** Tests passing means the rules in the Part 3 docs (the scoring formula, the routing tiers) are wired up correctly in code. Coverage on the deterministic modules is ~94%; every multiplier, tier boundary, and gate check has a test guarding it.
 
@@ -227,7 +227,7 @@ uv run python -m signal_engine.inspect_audit --latest
 After Step 7, you've proven, end-to-end on a clean machine:
 
 1. ✓ The build installs reproducibly (Step 4 — lockfile-backed)
-2. ✓ The deterministic core is test-covered and correct (Step 5 — 60 tests, ~94% coverage)
+2. ✓ The deterministic core is test-covered and correct (Step 5 — 65 tests, ~94% coverage)
 3. ✓ An exec_hire signal flows through detection → enrichment → scoring → routing exactly per the Part 3 spec (Step 6, stages 1–4)
 4. ✓ The Personalisation Agent really is a live Claude call (Step 6, stage 5 — hook text varies each run)
 5. ✓ The Strong-Hook Gate really evaluates candidates (you can read the pass/fail reasons; Step 6b shows the manual-review path on Linear)
@@ -291,7 +291,7 @@ build/
 │   ├── signals/
 │   ├── companies/
 │   └── contacts/
-├── tests/                    # pytest suite (60 tests, 94% core coverage)
+├── tests/                    # pytest suite (65 tests, 94% core coverage)
 ├── audit/                    # JSON audit logs (gitignored, created at runtime)
 ├── examples/                 # Captured CLI runs from `uv run ...`
 ├── pyproject.toml            # uv-managed
