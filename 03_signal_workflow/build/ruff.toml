@@ -3,7 +3,10 @@ target-version = "py312"
 
 [lint]
 select = ["E", "F", "I", "B", "UP", "N", "RUF"]
-ignore = ["E501"]
+# RUF001/002/003: deliberate em/en/× usage in prompts, docstrings,
+# and tests that exercise dash stripping. The brand-voice rule has us
+# handling these characters explicitly.
+ignore = ["E501", "RUF001", "RUF002", "RUF003"]
 
 [lint.per-file-ignores]
 "tests/*" = ["B", "N"]

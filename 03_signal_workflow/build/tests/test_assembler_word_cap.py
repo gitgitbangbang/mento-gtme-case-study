@@ -120,7 +120,8 @@ def _make_hook() -> HookCandidate:
 
 def test_polish_first_attempt_under_cap_returns_immediately() -> None:
     """If the first polish attempt is within budget, no retry happens."""
-    short_body = "Hi Sarah,\n\nThree-word hook here.\n\n— Alex"  # 7 words
+    # Token count: Hi, Sarah,, Three-word, hook, here., Alex = 6 words.
+    short_body = "Hi Sarah,\n\nThree-word hook here.\n\nAlex"
     stub = _ProgrammableStub([f"Subject: first 90 days\n\n{short_body}"])
 
     draft = assembler.assemble(
@@ -138,10 +139,9 @@ def test_polish_first_attempt_under_cap_returns_immediately() -> None:
 
 def test_polish_retries_when_first_attempt_over_cap() -> None:
     """If first attempt exceeds 70 words, retry with explicit feedback."""
-    # Token counts (whitespace split): "Hi Sarah," = 2, 80 placeholders = 80,
-    # "— Alex" = 2; total 84 for over_body, 44 for under_body.
-    over_body = "Hi Sarah,\n\n" + " ".join(["word"] * 80) + "\n\n— Alex"  # 84 words
-    under_body = "Hi Sarah,\n\n" + " ".join(["word"] * 40) + "\n\n— Alex"  # 44 words
+    # Token counts (whitespace split): "Hi Sarah," = 2, N placeholders, "Alex" = 1.
+    over_body = "Hi Sarah,\n\n" + " ".join(["word"] * 80) + "\n\nAlex"  # 83 words
+    under_body = "Hi Sarah,\n\n" + " ".join(["word"] * 40) + "\n\nAlex"  # 43 words
     stub = _ProgrammableStub(
         [
             f"Subject: first 90 days\n\n{over_body}",
@@ -164,20 +164,20 @@ def test_polish_retries_when_first_attempt_over_cap() -> None:
     )
     assert len(stub.calls) == 2, "expected one retry after first over-budget attempt"
     # The retry's system prompt should report the first-attempt word count
-    # ("previous attempt was 84 words"), so Claude knows the gap.
+    # ("previous attempt was 83 words"), so Claude knows the gap.
     retry_system = stub.calls[1]["system"]
     assert "previous" in retry_system.lower()
-    assert "84" in retry_system
+    assert "83" in retry_system
 
 
 def test_polish_keeps_shortest_attempt_if_all_attempts_over_cap(
     caplog: pytest.LogCaptureFixture,
 ) -> None:
     """If every attempt exceeds the cap, ship the shortest and warn."""
-    # Whitespace token counts: Hi Sarah, (2) + N placeholders + — Alex (2).
-    a_body = "Hi Sarah,\n\n" + " ".join(["word"] * 100) + "\n\n— Alex"  # 104 words
-    b_body = "Hi Sarah,\n\n" + " ".join(["word"] * 90) + "\n\n— Alex"  # 94 words
-    c_body = "Hi Sarah,\n\n" + " ".join(["word"] * 85) + "\n\n— Alex"  # 89 words
+    # Whitespace token counts: Hi Sarah, (2) + N placeholders + Alex (1).
+    a_body = "Hi Sarah,\n\n" + " ".join(["word"] * 100) + "\n\nAlex"  # 103 words
+    b_body = "Hi Sarah,\n\n" + " ".join(["word"] * 90) + "\n\nAlex"  # 93 words
+    c_body = "Hi Sarah,\n\n" + " ".join(["word"] * 85) + "\n\nAlex"  # 88 words
     stub = _ProgrammableStub(
         [
             f"Subject: first 90 days\n\n{a_body}",
@@ -197,8 +197,8 @@ def test_polish_keeps_shortest_attempt_if_all_attempts_over_cap(
         )
 
     final_words = len(draft.body.split())
-    # All three attempts were over cap; expect we shipped the shortest (c, 89 words).
-    assert final_words == 89, f"expected shortest (89 words), got {final_words}"
+    # All three attempts were over cap; expect we shipped the shortest (c, 88 words).
+    assert final_words == 88, f"expected shortest (88 words), got {final_words}"
     # Confirm a warning was logged about exceeding the cap.
     assert any(
         "exceed" in rec.message.lower() or "cap" in rec.message.lower()
@@ -209,7 +209,7 @@ def test_polish_keeps_shortest_attempt_if_all_attempts_over_cap(
 
 def test_polish_passes_max_words_in_first_system_prompt() -> None:
     """The first polish system prompt must mention the {max_words} budget."""
-    short_body = "Hi Sarah,\n\nShort.\n\n— Alex"
+    short_body = "Hi Sarah,\n\nShort.\n\nAlex"
     stub = _ProgrammableStub([f"Subject: first 90 days\n\n{short_body}"])
 
     assembler.assemble(
@@ -223,4 +223,109 @@ def test_polish_passes_max_words_in_first_system_prompt() -> None:
 
     system_prompt = stub.calls[0]["system"]
     assert str(MAX_EMAIL_WORDS) in system_prompt
-    assert "primary directive" in system_prompt.lower() or "hard constraint" in system_prompt.lower()
+    assert "primary directive" in system_prompt.lower()
+
+
+# --- Dash stripping -----------------------------------------------------
+
+
+# Use chr() so ruff RUF001/002 doesn't flag deliberate em/en dashes as
+# ambiguous source-code characters. These tests exercise the strip
+# logic for these exact two codepoints.
+_EM = chr(0x2014)  # em dash
+_EN = chr(0x2013)  # en dash
+
+
+def test_strip_dashes_removes_em_dashes() -> None:
+    """`_strip_dashes` should replace em dashes with a period + space."""
+    out = assembler._strip_dashes(f"foundation {_EM} Vanta's EMEA push")
+    assert _EM not in out
+    assert out == "foundation. Vanta's EMEA push"
+
+
+def test_strip_dashes_preserves_compound_hyphens() -> None:
+    """Hyphens inside compound words must survive untouched."""
+    out = assembler._strip_dashes("first-investment decision and high-growth core")
+    assert "first-investment" in out
+    assert "high-growth" in out
+
+
+def test_strip_dashes_converts_en_dash_in_numeric_range_to_hyphen() -> None:
+    """En dash inside a date range like '2-6' should become a hyphen."""
+    out = assembler._strip_dashes(f"coaching program in months 2{_EN}6 of tenure")
+    assert "2-6" in out
+    assert _EN not in out
+
+
+def test_strip_dashes_handles_generic_en_dashes() -> None:
+    """Lone en dashes outside numeric ranges should become a period + space."""
+    out = assembler._strip_dashes(f"scope {_EN} it matters")
+    assert _EN not in out
+    assert out == "scope. it matters"
+
+
+def test_polished_output_never_contains_dashes(
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    """Even if the model returns em dashes, the assembler strips them."""
+    dashy_body = (
+        "Hi Sarah,\n\n"
+        f"Coda was a long run {_EM} four years scaling People {_EM} and Vanta is a "
+        f"different scope. Months 2{_EN}6 are the right window.\n\n"
+        "Worth 20 minutes?\n\nAlex"
+    )
+    stub = _ProgrammableStub([f"Subject: first 90 days\n\n{dashy_body}"])
+
+    draft = assembler.assemble(
+        signal=_make_signal(),
+        company=_make_company(),
+        contact=_make_contact(),
+        selected_hook=_make_hook(),
+        client=stub,  # type: ignore[arg-type]
+        polish=True,
+    )
+
+    assert _EM not in draft.body, f"em dash leaked into final body: {draft.body!r}"
+    assert _EN not in draft.body, f"en dash leaked into final body: {draft.body!r}"
+    # The numeric range "2-6" survives as a hyphen, not removed.
+    assert "2-6" in draft.body
+
+
+def test_polish_system_prompt_explicitly_forbids_dashes() -> None:
+    """The first polish system prompt must say no em dashes."""
+    short_body = "Hi Sarah,\n\nShort hook.\n\nAlex"
+    stub = _ProgrammableStub([f"Subject: first 90 days\n\n{short_body}"])
+
+    assembler.assemble(
+        signal=_make_signal(),
+        company=_make_company(),
+        contact=_make_contact(),
+        selected_hook=_make_hook(),
+        client=stub,  # type: ignore[arg-type]
+        polish=True,
+    )
+
+    system_prompt = stub.calls[0]["system"]
+    assert "em dash" in system_prompt.lower() or _EM in system_prompt
+    assert "en dash" in system_prompt.lower() or _EN in system_prompt
+
+
+def test_no_polish_path_still_strips_dashes() -> None:
+    """--no-polish skips the LLM but must still remove dashes from the body."""
+    # The personaliser's hook is what introduces dashes here. Simulate by
+    # passing a hook that contains an em dash; the no-polish path must
+    # still produce a dash-free body.
+    dashy_hook = HookCandidate(
+        text=f"Coda {_EM} 80 to 600 {_EM} is a strong foundation.",
+        word_count=9,
+    )
+
+    draft = assembler.assemble(
+        signal=_make_signal(),
+        company=_make_company(),
+        contact=_make_contact(),
+        selected_hook=dashy_hook,
+        polish=False,  # skip the LLM polish entirely
+    )
+
+    assert _EM not in draft.body, f"em dash leaked through --no-polish path: {draft.body!r}"

@@ -10,4 +10,4 @@ Happy to share how that handoff worked.
 
 Worth 15 minutes?
 
-— {sdr_signature}
+{sdr_signature}

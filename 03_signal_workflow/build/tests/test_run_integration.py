@@ -86,13 +86,13 @@ _POLISHED_DRAFT = """Subject: manager bench
 
 Hi Karri,
 
-Saw Linear's $82M Series C from Accel close last week. With the agent-triage rollout in parallel, your headcount math probably gets interesting fast.
+Saw Linear's $82M Series C from Accel close last week. The agent-triage rollout makes the headcount math interesting fast.
 
-Pattern post-funding: hiring outpaces the manager bench by 90 days. Performance dips at the team-lead layer. Brex and Vercel saw it.
+Pattern post-funding: hiring outpaces the manager bench by 90 days. Brex and Vercel saw it.
 
 Happy to share the playbook. Worth 15 minutes?
 
-— Alex
+Alex
 """
 
 
