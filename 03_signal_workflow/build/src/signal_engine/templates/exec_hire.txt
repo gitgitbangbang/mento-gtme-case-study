@@ -10,4 +10,4 @@ Happy to share what worked at Brex and Gusto.
 
 Worth 20 minutes?
 
-— {sdr_signature}
+{sdr_signature}

@@ -35,7 +35,8 @@ Voice rules:
 - Specific over generic. Named investor, named prior company, exact title.
 - Lower the stakes. No salesy hedging, no jargon.
 - British English. No exclamation marks. No emojis.
-- Each hook 1-2 sentences, under 50 words.
+- Each hook 1-2 sentences, 25 words maximum (28 in unusual cases). Tight is better than long.
+- DO NOT use em dashes ('—') or en dashes ('–') anywhere in the hook. Use periods, commas, or semicolons instead. Hyphens ('-') inside compound words like "first-investment" or numeric ranges like "3-9" are fine; those are not dashes.
 
 Banned phrases: "hope this finds you well", "wanted to reach out", "leverage", "synergy", "circle back", "touch base".
 

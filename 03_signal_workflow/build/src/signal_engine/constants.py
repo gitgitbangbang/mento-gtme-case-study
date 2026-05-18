@@ -72,6 +72,11 @@ SIGNAL_FRESHNESS_DAYS: Final[int] = 60
 # Source: 03_outreach_drafts.md, "Brand Voice Rules" table row 6.
 MAX_EMAIL_WORDS: Final[int] = 70
 
+# Target the polish model lower than the hard cap. Models tend to
+# overshoot their stated budget by 1-5 words, so aiming for 65 leaves
+# margin to land at or under 70 reliably without needing the retry.
+POLISH_TARGET_WORDS: Final[int] = 65
+
 # How many polish attempts to make before logging a warning and shipping
 # whatever the model produced. First attempt + N retries = N+1 total calls.
 MAX_POLISH_RETRIES: Final[int] = 2

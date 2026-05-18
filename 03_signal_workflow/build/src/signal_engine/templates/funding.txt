@@ -10,4 +10,4 @@ Happy to share the playbook.
 
 Worth 15 minutes?
 
-— {sdr_signature}
+{sdr_signature}

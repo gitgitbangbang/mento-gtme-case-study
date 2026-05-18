@@ -24,6 +24,7 @@ from __future__ import annotations
 
 import logging
 import os
+import re
 from pathlib import Path
 
 from anthropic import Anthropic
@@ -35,6 +36,7 @@ from signal_engine.constants import (
     GATE_TEMPERATURE,
     MAX_EMAIL_WORDS,
     MAX_POLISH_RETRIES,
+    POLISH_TARGET_WORDS,
 )
 from signal_engine.models import Company, Contact, Draft, HookCandidate, Signal
 
@@ -44,8 +46,11 @@ TEMPLATES_ROOT = Path(__file__).resolve().parent / "templates"
 
 _POLISH_SYSTEM_PROMPT = """You are a copy editor for Mento, a coaching company. You receive a finished cold email draft and return it trimmed to fit the brand-voice rules.
 
-PRIMARY DIRECTIVE — HARD CONSTRAINT:
-The body (everything after the Subject line, excluding the signoff `— Name`) MUST be {max_words} words or fewer. Count carefully. If the input is over budget, trim verbosity, redundancy, and any "filler" sentences while preserving every named fact (companies, dollar amounts, headcount figures, exact titles, prospect first name).
+PRIMARY DIRECTIVE 1 (WORD COUNT):
+The body (everything after the Subject line) MUST be {max_words} words or fewer. Target {target_words} words to leave a safety margin. Count carefully. If the input is over budget, trim verbosity, redundancy, and any "filler" sentences while preserving every named fact (companies, dollar amounts, headcount figures, exact titles, prospect first name).
+
+PRIMARY DIRECTIVE 2 (NO DASHES):
+Do not use em dashes ('—') or en dashes ('–') anywhere in the body. Use periods, commas, or semicolons instead. Hyphens ('-') inside compound words like "first-investment" or "high-growth" or date ranges like "3-9" are acceptable; those are not dashes. If the input contains em or en dashes, replace them with appropriate punctuation while preserving the sentence meaning.
 
 Secondary rules:
 - British English consistency
@@ -67,7 +72,7 @@ Nothing else. No preamble, no commentary, no word count."""
 
 _POLISH_RETRY_TEMPLATE = """{system_base}
 
-NOTE — RETRY: Your previous attempt was {previous_words} words. The hard cap is {max_words}. You must trim {excess} more words while preserving all named facts. Cut redundancy and adverbs first; collapse "Most People execs start a coaching program in months 2-6 of tenure" style sentences if needed."""
+NOTE - RETRY: Your previous attempt was {previous_words} words. The hard cap is {max_words}, target {target_words}. You must trim at least {excess} more words while preserving all named facts. Cut redundancy and adverbs first."""
 
 
 def assemble(
@@ -92,6 +97,11 @@ def assemble(
 
     if polish:
         body = _polish(subject=subject, body=body, client=client)
+    else:
+        # Polish does its own deterministic dash strip inside the retry
+        # loop. With --no-polish, strip here so the brand-voice rule
+        # ("no em or en dashes") still holds.
+        body = _strip_dashes(body)
 
     logger.info("assembler: built draft for %s / %s", company.company_name, contact.first_name)
     return Draft(
@@ -145,15 +155,21 @@ def _polish(*, subject: str, body: str, client: Anthropic | None) -> str:
     over_cap_attempts: list[tuple[int, str]] = []
     previous_words = _word_count(body)
 
+    base_system = _POLISH_SYSTEM_PROMPT.format(
+        max_words=MAX_EMAIL_WORDS,
+        target_words=POLISH_TARGET_WORDS,
+    )
+
     for attempt in range(MAX_POLISH_RETRIES + 1):
         if attempt == 0:
-            system_prompt = _POLISH_SYSTEM_PROMPT.format(max_words=MAX_EMAIL_WORDS)
+            system_prompt = base_system
         else:
             system_prompt = _POLISH_RETRY_TEMPLATE.format(
-                system_base=_POLISH_SYSTEM_PROMPT.format(max_words=MAX_EMAIL_WORDS),
+                system_base=base_system,
                 previous_words=previous_words,
                 max_words=MAX_EMAIL_WORDS,
-                excess=previous_words - MAX_EMAIL_WORDS,
+                target_words=POLISH_TARGET_WORDS,
+                excess=previous_words - POLISH_TARGET_WORDS,
             )
 
         raw_draft = f"Subject: {subject}\n\n{body}"
@@ -175,12 +191,17 @@ def _polish(*, subject: str, body: str, client: Anthropic | None) -> str:
             continue
 
         _subject_line, polished_body = raw_polished.split("\n\n", 1)
+        # Deterministic dash strip — non-negotiable brand-voice rule. The
+        # polish prompt is also told to avoid em/en dashes but this is
+        # the belt-and-braces guarantee regardless of model behaviour.
+        polished_body = _strip_dashes(polished_body)
         polished_word_count = _word_count(polished_body)
         logger.info(
-            "assembler: polish attempt %d produced %d words (cap %d)",
+            "assembler: polish attempt %d produced %d words (cap %d, target %d)",
             attempt + 1,
             polished_word_count,
             MAX_EMAIL_WORDS,
+            POLISH_TARGET_WORDS,
         )
 
         if polished_word_count <= MAX_EMAIL_WORDS:
@@ -214,8 +235,33 @@ def _word_count(text: str) -> int:
     """Whitespace-tokenised word count for the brand-voice 70-word cap.
 
     Matches the personaliser's `_count_words` so hook + body word
-    counts are computed the same way. The signoff line `— <name>`
-    contributes 1 word ("Alex"); the em-dash itself isn't whitespace-
-    separated as a token so it doesn't double-count.
+    counts are computed the same way.
     """
     return len(text.split())
+
+
+_EM_DASH_RUN = re.compile(r"\s*—+\s*")
+_EN_DASH_NUMERIC = re.compile(r"(\d)–(\d)")
+_EN_DASH_GENERIC = re.compile(r"\s*–+\s*")
+
+
+def _strip_dashes(text: str) -> str:
+    """Remove every em dash and en dash from the body, deterministically.
+
+    Replacements:
+    - em dash (U+2014, with any surrounding whitespace) -> ". "
+    - en dash inside a numeric range like "2–6" -> hyphen ("2-6")
+    - any other en dash -> ". "
+
+    Hyphens (U+002D) inside compound words ("first-investment",
+    "high-growth") are deliberately left untouched. Those are
+    orthographic hyphens, not dashes.
+    """
+    text = _EN_DASH_NUMERIC.sub(r"\1-\2", text)
+    text = _EM_DASH_RUN.sub(". ", text)
+    text = _EN_DASH_GENERIC.sub(". ", text)
+    # Collapse any artefacts like ". . " or doubled periods left by the
+    # substitutions above.
+    text = re.sub(r"\s*\.\s+\.\s*", ". ", text)
+    text = re.sub(r" {2,}", " ", text)
+    return text

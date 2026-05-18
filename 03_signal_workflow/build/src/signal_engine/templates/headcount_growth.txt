@@ -10,4 +10,4 @@ Happy to share their setup.
 
 Worth 20 minutes?
 
-— {sdr_signature}
+{sdr_signature}
