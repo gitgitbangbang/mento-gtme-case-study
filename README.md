@@ -70,3 +70,4 @@ uv run python -m signal_engine.run --signal funding --company linear
 ```
 
 See `03_signal_workflow/build/README.md` for the full breakdown and a 7-step verification walkthrough.
+
