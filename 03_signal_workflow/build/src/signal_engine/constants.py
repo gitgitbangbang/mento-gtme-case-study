@@ -65,6 +65,17 @@ HOOK_MAX_WORDS: Final[int] = 50
 HOOK_CANDIDATES_PER_RUN: Final[int] = 3
 SIGNAL_FRESHNESS_DAYS: Final[int] = 60
 
+# --- Draft Assembly Agent ----------------------------------------------
+
+# Hard cap on the total body length per Mento brand-voice rule
+# ("Under 70 words total | Senior People execs scan, don't read.").
+# Source: 03_outreach_drafts.md, "Brand Voice Rules" table row 6.
+MAX_EMAIL_WORDS: Final[int] = 70
+
+# How many polish attempts to make before logging a warning and shipping
+# whatever the model produced. First attempt + N retries = N+1 total calls.
+MAX_POLISH_RETRIES: Final[int] = 2
+
 BANNED_PHRASES: Final[tuple[str, ...]] = (
     "hope this finds you well",
     "hope this email finds you well",

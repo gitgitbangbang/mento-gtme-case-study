@@ -12,6 +12,12 @@ Template file layout:
 
 The first line is parsed as the subject; everything below the first
 blank line is the body that gets `str.format()`-substituted.
+
+The polish step is wrapped in a deterministic word-count check: drafts
+that come back over MAX_EMAIL_WORDS get one retry with explicit
+feedback before we ship the best attempt. The Mento brand-voice rule
+("Under 70 words total") is enforced here rather than left to the
+model's discretion.
 """
 
 from __future__ import annotations
@@ -27,6 +33,8 @@ from signal_engine.constants import (
     ANTHROPIC_MODEL,
     DEFAULT_SDR_SIGNATURE,
     GATE_TEMPERATURE,
+    MAX_EMAIL_WORDS,
+    MAX_POLISH_RETRIES,
 )
 from signal_engine.models import Company, Contact, Draft, HookCandidate, Signal
 
@@ -34,19 +42,32 @@ logger = logging.getLogger(__name__)
 
 TEMPLATES_ROOT = Path(__file__).resolve().parent / "templates"
 
-_POLISH_SYSTEM_PROMPT = """You are a copy editor for Mento, a coaching company. You receive a finished cold email draft and return it with light edits only:
+_POLISH_SYSTEM_PROMPT = """You are a copy editor for Mento, a coaching company. You receive a finished cold email draft and return it trimmed to fit the brand-voice rules.
+
+PRIMARY DIRECTIVE — HARD CONSTRAINT:
+The body (everything after the Subject line, excluding the signoff `— Name`) MUST be {max_words} words or fewer. Count carefully. If the input is over budget, trim verbosity, redundancy, and any "filler" sentences while preserving every named fact (companies, dollar amounts, headcount figures, exact titles, prospect first name).
+
+Secondary rules:
 - British English consistency
 - No exclamation marks, no emojis
-- Remove any salesy hedging or filler (kept under 70 words ideally, never over 80)
+- No salesy hedging
 - Keep the subject line exactly as given
+- Do not change the structure (Hi <Name>, / hook paragraph / insight paragraph / soft CTA / signoff)
+- Do not change named companies or numbers
+- Do not add new claims
 
-Do not change the structure, do not change named companies or numbers, and do not add new claims. Return the email exactly in this shape:
+Return the email exactly in this shape:
 
 Subject: <subject line>
 
 <body>
 
-Nothing else."""
+Nothing else. No preamble, no commentary, no word count."""
+
+
+_POLISH_RETRY_TEMPLATE = """{system_base}
+
+NOTE — RETRY: Your previous attempt was {previous_words} words. The hard cap is {max_words}. You must trim {excess} more words while preserving all named facts. Cut redundancy and adverbs first; collapse "Most People execs start a coaching program in months 2-6 of tenure" style sentences if needed."""
 
 
 def assemble(
@@ -103,24 +124,98 @@ def _load_template(name: str) -> tuple[str, str]:
 
 
 def _polish(*, subject: str, body: str, client: Anthropic | None) -> str:
-    """Run the assembled draft through a Claude voice pass.
+    """Run the assembled draft through one or more Claude voice passes.
 
-    Strictly editorial — voice clean-up, no structural rewrites. If the
-    model returns something we can't parse, fall back to the unpolished
-    body so the demo never produces a broken draft.
+    On the first attempt, the model is told the {max_words} cap as a
+    primary directive. If the result still exceeds the cap, retries up
+    to MAX_POLISH_RETRIES more times with explicit "your previous
+    attempt was N words, trim by N-cap" feedback. If all attempts come
+    back over budget, the best (shortest) attempt is returned and a
+    warning is logged so the over-budget run surfaces in the audit.
+
+    Strictly editorial — voice clean-up, no structural rewrites. If
+    the model returns something we can't parse, fall back to the
+    unpolished body so the demo never produces a broken draft.
     """
     api_client = client or Anthropic(api_key=os.environ["ANTHROPIC_API_KEY"])
-    raw_draft = f"Subject: {subject}\n\n{body}"
-    response = api_client.messages.create(
-        model=ANTHROPIC_MODEL,
-        max_tokens=ANTHROPIC_MAX_TOKENS,
-        temperature=GATE_TEMPERATURE,
-        system=_POLISH_SYSTEM_PROMPT,
-        messages=[{"role": "user", "content": raw_draft}],
+
+    # Track every parseable polished attempt so we can ship the shortest if
+    # none come in under the cap. Input body is the ultimate fallback only
+    # if every attempt is unparseable.
+    over_cap_attempts: list[tuple[int, str]] = []
+    previous_words = _word_count(body)
+
+    for attempt in range(MAX_POLISH_RETRIES + 1):
+        if attempt == 0:
+            system_prompt = _POLISH_SYSTEM_PROMPT.format(max_words=MAX_EMAIL_WORDS)
+        else:
+            system_prompt = _POLISH_RETRY_TEMPLATE.format(
+                system_base=_POLISH_SYSTEM_PROMPT.format(max_words=MAX_EMAIL_WORDS),
+                previous_words=previous_words,
+                max_words=MAX_EMAIL_WORDS,
+                excess=previous_words - MAX_EMAIL_WORDS,
+            )
+
+        raw_draft = f"Subject: {subject}\n\n{body}"
+        response = api_client.messages.create(
+            model=ANTHROPIC_MODEL,
+            max_tokens=ANTHROPIC_MAX_TOKENS,
+            temperature=GATE_TEMPERATURE,
+            system=system_prompt,
+            messages=[{"role": "user", "content": raw_draft}],
+        )
+        raw_polished = (
+            "".join(block.text for block in response.content if block.type == "text").strip()
+        )
+        if "\n\n" not in raw_polished or not raw_polished.lower().startswith("subject:"):
+            logger.warning(
+                "assembler: polish attempt %d output unparseable, retrying",
+                attempt + 1,
+            )
+            continue
+
+        _subject_line, polished_body = raw_polished.split("\n\n", 1)
+        polished_word_count = _word_count(polished_body)
+        logger.info(
+            "assembler: polish attempt %d produced %d words (cap %d)",
+            attempt + 1,
+            polished_word_count,
+            MAX_EMAIL_WORDS,
+        )
+
+        if polished_word_count <= MAX_EMAIL_WORDS:
+            return polished_body
+
+        over_cap_attempts.append((polished_word_count, polished_body))
+        previous_words = polished_word_count
+
+    # Every polished attempt was over cap (or unparseable). Ship the
+    # shortest over-cap attempt and log loudly so it lands in the audit.
+    if over_cap_attempts:
+        shortest_words, shortest_body = min(over_cap_attempts, key=lambda t: t[0])
+        logger.warning(
+            "assembler: final draft is %d words (cap %d, excess %d). All %d polish "
+            "attempts exceeded the brand-voice cap; shipping shortest attempt.",
+            shortest_words,
+            MAX_EMAIL_WORDS,
+            shortest_words - MAX_EMAIL_WORDS,
+            MAX_POLISH_RETRIES + 1,
+        )
+        return shortest_body
+
+    logger.warning(
+        "assembler: all %d polish attempts unparseable, returning unpolished body",
+        MAX_POLISH_RETRIES + 1,
     )
-    polished = "".join(block.text for block in response.content if block.type == "text").strip()
-    if "\n\n" not in polished or not polished.lower().startswith("subject:"):
-        logger.warning("assembler: polish output unparseable, returning unpolished body")
-        return body
-    _subject_line, polished_body = polished.split("\n\n", 1)
-    return polished_body
+    return body
+
+
+def _word_count(text: str) -> int:
+    """Whitespace-tokenised word count for the brand-voice 70-word cap.
+
+    Matches the personaliser's `_count_words` so hook + body word
+    counts are computed the same way. The signoff line `— <name>`
+    contributes 1 word ("Alex"); the em-dash itself isn't whitespace-
+    separated as a token so it doesn't double-count.
+    """
+    return len(text.split())
