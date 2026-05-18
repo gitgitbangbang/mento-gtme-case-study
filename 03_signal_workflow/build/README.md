@@ -121,13 +121,24 @@ pwd
 
 ### Step 3 — Drop your API key into `.env`
 
+Run **one** of these two options. Don't copy the prose between them or the `# verify` block into your shell — each code block below is meant to be pasted on its own.
+
+**Option A** — edit `.env` in your editor and paste the key after the `=`:
+
 ```bash
 cp .env.example .env
-# then either edit .env in a text editor and paste the key after the =
-# OR run this one-liner (replace YOUR-KEY-HERE):
-printf 'ANTHROPIC_API_KEY=%s\n' 'sk-ant-api03-YOUR-KEY-HERE' > .env
+open -e .env
+```
 
-# verify:
+**Option B** — write the key directly via `printf` (replace `<your-key-here>` with your real key, drop the angle brackets):
+
+```bash
+printf 'ANTHROPIC_API_KEY=%s\n' '<your-key-here>' > .env
+```
+
+Then verify (paste this exactly as shown):
+
+```bash
 test $(wc -c < .env) -gt 50 && echo "OK: key present" || echo "FAIL: paste your key in"
 ```
 
