@@ -121,13 +121,24 @@ pwd
 
 ### Step 3 — Drop your API key into `.env`
 
+Run **one** of these two options. Don't copy the prose between them or the `# verify` block into your shell — each code block below is meant to be pasted on its own.
+
+**Option A** — edit `.env` in your editor and paste the key after the `=`:
+
 ```bash
 cp .env.example .env
-# then either edit .env in a text editor and paste the key after the =
-# OR run this one-liner (replace YOUR-KEY-HERE):
-printf 'ANTHROPIC_API_KEY=%s\n' 'sk-ant-api03-YOUR-KEY-HERE' > .env
+open -e .env
+```
 
-# verify:
+**Option B** — write the key directly via `printf` (replace `<your-key-here>` with your real key, drop the angle brackets):
+
+```bash
+printf 'ANTHROPIC_API_KEY=%s\n' '<your-key-here>' > .env
+```
+
+Then verify (paste this exactly as shown):
+
+```bash
 test $(wc -c < .env) -gt 50 && echo "OK: key present" || echo "FAIL: paste your key in"
 ```
 
@@ -164,29 +175,51 @@ uv run pytest -q
 ### Step 6 — Run one signal end-to-end against the live Claude API
 
 ```bash
-uv run python -m signal_engine.run --signal funding --company linear --non-interactive
+uv run python -m signal_engine.run --signal exec_hire --company vanta --non-interactive
 ```
 
-**Plain English.** This is the demo. Walks Linear's $82M Series C funding signal all the way through the five-stage pipeline: detection → enrichment → scoring → routing → AI drafting. Makes five real calls to Claude (one to generate three hook candidates, three to evaluate them, one to polish the final draft).
+**Plain English.** This is the demo. Walks Vanta's new CHRO hire (Sarah Chen, ex-Coda VP People, scaled that team 80→600) all the way through the five-stage pipeline: detection → enrichment → scoring → routing → AI drafting. Makes five real calls to Claude (one to generate three hook candidates, three to evaluate them, one to polish the final draft).
 
 `--non-interactive` skips the human-in-the-loop prompt at the end and auto-treats every draft as Send. Drop the flag to get the interactive `[s]end / [e]dit / [k]ip` prompt.
 
-**Expected (~10 seconds).** Five stage banners `[1/5]` through `[5/5]`, three hook candidates printed with their gate verdicts, a draft inside two banner rules with subject `manager bench` and body starting `Hi Karri,`, then `[STUB] Would have triggered Smartlead...`, then `[AUDIT] audit/<timestamp>...`.
+**Expected (~10 seconds).** Five stage banners `[1/5]` through `[5/5]`, three hook candidates printed with their gate verdicts (typically all three pass the gate on this run because Sarah's prior-role context is rich), a draft inside two banner rules with subject `first 90 days` and body starting `Hi Sarah,`, then `[STUB] Would have triggered Smartlead campaign 'mento-signal-exec-hire'...`, then `[AUDIT] audit/<timestamp>...`.
 
 **What's deterministic (same every run) vs variable (different every run):**
 
 | | Behaviour across runs |
 |---|---|
-| `base_weight = 4.000` | identical — funding signal weight is fixed |
-| `recency_decay = 0.875` | identical — fixture pegs the signal to 4 days ago |
-| `buyer_proximity = 1.000` | identical — Karri is the economic buyer with engagement |
-| `signal_score = 3.501` | identical |
-| `Routing: P1` | identical — score ≥3 AND icp_total ≥11 |
+| `base_weight = 3.000` | identical — exec_hire signal weight is fixed |
+| `recency_decay` ≈ 0.766 | identical — fixture pegs the signal to 8 days ago |
+| `buyer_proximity = 1.000` | identical — Sarah is the economic buyer with engagement |
+| `signal_score` ≈ 2.298 | identical |
+| `Routing: P2` | identical — score in [1.5, 3) AND icp_total = 19 |
 | The 3 hook candidates' wording | **different** — Claude generates fresh each run |
 | Which candidate the gate selects | may vary — depends on which hook clears all five criteria |
 | The polished draft body | **different** in opening, identical in template content |
 
 **Why it matters.** This is the proof the AI layer is real. The hook text and chosen hook will be different each run because Claude isn't deterministic — but the tier, the score, and the template structure are stable. That asymmetry is the design: **deterministic where it needs to be auditable** (scoring, routing), **agentic where it needs to be contextual** (the opening line).
+
+### Step 6b — Run all four signals in sequence (the variety pass)
+
+```bash
+uv run python -m signal_engine.run --all --non-interactive
+```
+
+**Plain English.** Cycles through all four canonical signal/company pairs: funding/linear, exec_hire/vanta, ld_posting/ramp, headcount_growth/retool. `--all` implies `--non-interactive`. About 60 seconds and ~$0.40 in API spend per invocation.
+
+**Expected.** Four full `[1/5]…[5/5]` pipeline blocks, one per pair, then a summary table:
+
+```
+─── BATCH SUMMARY ───────────────────────────────────────────
+signal             company  tier       gate       outcome
+─────────────────────────────────────────────────────────────
+funding            linear   P1         varies     draft sent OR manual review
+exec_hire          vanta    P2         3/3        draft sent
+ld_posting         ramp     P2         2/3        draft sent
+headcount_growth   retool   P3         2/3        draft sent
+```
+
+**Why Linear's outcome varies.** Karri Saarinen is Linear's CEO, not a People exec. Mento sells to senior People execs (CHRO / CPO / VP People), so the agent prompt and the Strong-Hook Gate are calibrated for People-exec voice. When the agent can latch onto Karri's Airbnb design-lead background, the gate often passes a candidate. When it leans on his founder-philosophy LinkedIn posts about small teams, the gate often flags "no buyer context" and the signal correctly routes to manual review. **Either outcome demonstrates the gate working as designed.** See [the case-study spec on the Strong-Hook Gate](../03_outreach_drafts.md) — "Better to send no draft than a generic one to a senior People exec at a target account."
 
 ### Step 7 — Read the audit log
 
@@ -210,22 +243,22 @@ uv run python -m signal_engine.inspect_audit --latest
 After Step 7, you've proven, end-to-end on a clean machine:
 
 1. ✓ The build installs reproducibly (Step 4 — lockfile-backed)
-2. ✓ The deterministic core is test-covered and correct (Step 5 — 57 tests, ~94% coverage)
-3. ✓ A funding signal flows through detection → enrichment → scoring → routing exactly per the Part 3 spec (Step 6, stages 1–4)
+2. ✓ The deterministic core is test-covered and correct (Step 5 — 60 tests, ~94% coverage)
+3. ✓ An exec_hire signal flows through detection → enrichment → scoring → routing exactly per the Part 3 spec (Step 6, stages 1–4)
 4. ✓ The Personalisation Agent really is a live Claude call (Step 6, stage 5 — hook text varies each run)
-5. ✓ The Strong-Hook Gate really evaluates candidates (you can read the pass/fail reasons)
+5. ✓ The Strong-Hook Gate really evaluates candidates (you can read the pass/fail reasons; Step 6b shows the manual-review path on Linear)
 6. ✓ The Draft Assembly Agent really polishes (compare the chosen hook text with the final draft body)
-7. ✓ Every run leaves a complete, machine-readable audit (Step 7)
+7. ✓ Every run leaves a complete, machine-readable audit (Step 7); `--all` produces four audits side-by-side (Step 6b)
 
 Roughly 10 minutes of your time. The only thing taken on faith is that the mocked external integrations (Crunchbase, Apollo, HubSpot, Slack, Smartlead) would behave the way the architecture doc says they would in production. Every stub is annotated with a `# STUB:` comment and a note on the real API that would replace it.
 
-### Try the Other Three Signals
+### Try the Other Signals Individually
 
 Available signals: `funding`, `exec_hire`, `ld_posting`, `headcount_growth`.
 Available companies: `linear`, `vanta`, `ramp`, `retool`.
 
 ```bash
-uv run python -m signal_engine.run --signal exec_hire --company vanta
+uv run python -m signal_engine.run --signal funding --company linear
 uv run python -m signal_engine.run --signal ld_posting --company ramp
 uv run python -m signal_engine.run --signal headcount_growth --company retool
 ```
@@ -242,6 +275,7 @@ Drop `--non-interactive` and you'll get the `[s]end / [e]dit / [k]ip` prompt at 
 
 ### Useful Flags
 
+- `--all` — run all four canonical signal/company pairs in sequence with a summary table. Implies `--non-interactive`. ~60 seconds, ~$0.40 API.
 - `--non-interactive` — skip the HITL prompt (treats every draft as Send). For CI / smoke tests.
 - `--no-polish` — skip the assembler's final Claude voice pass. Saves one API call per run.
 - `--sdr-signature "Your Name"` — override the signoff (default `Alex`).
@@ -270,7 +304,7 @@ build/
 │   ├── signals/
 │   ├── companies/
 │   └── contacts/
-├── tests/                    # pytest suite (57 tests, 94% core coverage)
+├── tests/                    # pytest suite (60 tests, 94% core coverage)
 ├── audit/                    # JSON audit logs (gitignored, created at runtime)
 ├── examples/                 # Captured CLI runs from `uv run ...`
 ├── pyproject.toml            # uv-managed
