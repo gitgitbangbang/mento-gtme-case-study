@@ -34,7 +34,7 @@ Every stub line carries a `# STUB:` comment with a one-line note on what would r
 ## What The Reviewer Sees
 
 ```bash
-$ uv run python -m signal_engine.run --signal funding --company linear
+$ uv run python -m signal_engine.run --api-key sk-ant-... --signal funding --company linear
 
 [1/5] Detecting signal: funding @ linear...
       sig_linear_funding_2026_05_10 (crunchbase, fired 2026-05-10)

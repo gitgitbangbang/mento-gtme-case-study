@@ -44,7 +44,7 @@ All shipped, merged, CI-green on main. Test coverage ~94% on the deterministic c
 │   ├── 03_outreach_drafts.md
 │   ├── workflow_diagram.html
 │   └── build/
-│       ├── CLAUDE_CODE_BRIEF.md
+│       ├── README.md          (verification walkthrough)
 │       └── (Python signal engine implementation)
 └── README.md
 ```
@@ -58,16 +58,11 @@ All shipped, merged, CI-green on main. Test coverage ~94% on the deterministic c
 
 Roughly **65% real working code, 35% mocked**. Real: scoring, routing, audit, Personalisation Agent + Strong-Hook Gate + Draft Assembly Agent (all real Claude API), CLI HITL. Mocked at external API boundaries (Crunchbase, LinkedIn, HubSpot, Slack, Smartlead) with explicit `# STUB:` comments.
 
-Quick start:
+### How to verify it works
 
-```bash
-cd 03_signal_workflow/build
-cp .env.example .env
-# add your ANTHROPIC_API_KEY
-uv sync
-uv run pytest
-uv run python -m signal_engine.run --signal funding --company linear
-```
+A **10-minute, 7-step verification walkthrough** lives at the top of [`03_signal_workflow/build/README.md`](./03_signal_workflow/build/README.md#verification-walkthrough--7-steps-in-10-minutes). For every step the reviewer gets the command, what it does in plain English, the expected output, and what it proves.
 
-See `03_signal_workflow/build/README.md` for the full breakdown and a 7-step verification walkthrough.
+The walkthrough handles installing `uv`, cloning into a fresh directory, passing your Anthropic API key inline via `--api-key`, running the test suite, running one signal end-to-end against the live Claude API, running all four signals in one command (`--all`), and reading the audit log. Total: ~10 minutes, ~$0.40 in Anthropic API spend.
+
+72 tests passing, ~94% coverage on the deterministic core. CI green on every push to `main`.
 
