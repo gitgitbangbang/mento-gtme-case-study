@@ -249,3 +249,60 @@ def test_run_no_polish_skips_assembler_claude_call(
     )
     assert exit_code == 0
     assert constructed == [], "assembler should not have constructed an Anthropic client"
+
+
+def test_run_all_processes_four_pairs(
+    stubbed_pipeline: Path,
+    capsys: pytest.CaptureFixture[str],
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """--all runs all four canonical pairs and prints a summary table."""
+    _pin_today(monkeypatch, date(2026, 5, 14))
+
+    exit_code = run.main(["--all"])
+    assert exit_code == 0
+
+    out = capsys.readouterr().out
+
+    # Each pair fires its own pipeline. The detect line per pair must appear.
+    for signal_type, company_id in [
+        ("funding", "linear"),
+        ("exec_hire", "vanta"),
+        ("ld_posting", "ramp"),
+        ("headcount_growth", "retool"),
+    ]:
+        assert f"Detecting signal: {signal_type} @ {company_id}" in out, (
+            f"missing pipeline run for {signal_type} @ {company_id}"
+        )
+
+    # Summary table sentinels.
+    assert "BATCH SUMMARY" in out
+    assert "4/4" in out or "4 signals" in out, "expected summary count line"
+
+    # Four audit files written to the patched root.
+    audits = list(stubbed_pipeline.glob("*.json"))
+    assert len(audits) == 4, f"expected 4 audit files, got {len(audits)}: {audits}"
+
+
+def test_all_is_mutually_exclusive_with_signal_company(
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    """--all + --signal should error rather than run with mixed arguments."""
+    monkeypatch.setenv("ANTHROPIC_API_KEY", "test-key")
+    with pytest.raises(SystemExit):
+        run.main(["--all", "--signal", "funding", "--company", "linear"])
+
+
+def test_missing_signal_and_company_errors(
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    """Without --all, --signal AND --company are both required."""
+    monkeypatch.setenv("ANTHROPIC_API_KEY", "test-key")
+    with pytest.raises(SystemExit):
+        run.main([])
+    with pytest.raises(SystemExit):
+        run.main(["--signal", "funding"])
+    with pytest.raises(SystemExit):
+        run.main(["--company", "linear"])

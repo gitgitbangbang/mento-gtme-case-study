@@ -2,10 +2,17 @@
 
 Usage:
 
+    # one focused signal end-to-end
     uv run python -m signal_engine.run --signal funding --company linear
+
+    # all four signal/company pairs in sequence, with a summary table
+    uv run python -m signal_engine.run --all --non-interactive
 
 Walks one signal end to end through detect -> enrich -> score -> route
 -> personaliser -> gate -> assembler -> HITL terminal -> audit log.
+`--all` runs the canonical four pairs (funding/linear, exec_hire/vanta,
+ld_posting/ramp, headcount_growth/retool) back to back; HITL is
+auto-skipped (treated as Send) so the batch can finish unattended.
 
 Direct prints are intentional here — this is the user-facing surface.
 Every other module logs through `logging`.
@@ -16,7 +23,9 @@ from __future__ import annotations
 import argparse
 import logging
 import sys
+from dataclasses import dataclass
 from datetime import UTC, datetime
+from pathlib import Path
 from typing import Final
 
 from dotenv import load_dotenv
@@ -34,21 +43,62 @@ from signal_engine.models import (
 
 _SIGNAL_CHOICES: Final[list[str]] = ["funding", "exec_hire", "ld_posting", "headcount_growth"]
 _COMPANY_CHOICES: Final[list[str]] = ["linear", "vanta", "ramp", "retool"]
+
+# Canonical pairs for --all. Matches detector._SIGNAL_FILE_MAP one-for-one.
+_ALL_PAIRS: Final[list[tuple[str, str]]] = [
+    ("funding", "linear"),
+    ("exec_hire", "vanta"),
+    ("ld_posting", "ramp"),
+    ("headcount_growth", "retool"),
+]
+
 _BANNER: Final[str] = "─" * 60
 
 
+@dataclass
+class _RunResult:
+    """Captures the outcome of one signal run for the batch summary table."""
+
+    signal_type: str
+    company_id: str
+    tier: str
+    candidates_total: int
+    candidates_passed: int
+    draft_subject: str  # empty string if no draft produced
+    sdr_decision: str  # "send" / "edit" / "skip" / "" (early exit)
+    audit_path: Path | None
+    outcome: str  # human-readable: "draft sent", "manual review", "discovery", "park"
+
+
 def main(argv: list[str] | None = None) -> int:
-    """Run one signal end to end. Returns shell exit code."""
+    """Run one signal (or all four with --all). Returns shell exit code."""
     parser = argparse.ArgumentParser(
         prog="signal_engine",
         description="Mento signal engine — runs one buying signal end to end.",
     )
-    parser.add_argument("--signal", required=True, choices=_SIGNAL_CHOICES)
-    parser.add_argument("--company", required=True, choices=_COMPANY_CHOICES)
+    parser.add_argument(
+        "--signal",
+        choices=_SIGNAL_CHOICES,
+        help="Signal type to detect. Required unless --all is set.",
+    )
+    parser.add_argument(
+        "--company",
+        choices=_COMPANY_CHOICES,
+        help="Company to target. Required unless --all is set.",
+    )
+    parser.add_argument(
+        "--all",
+        dest="run_all",
+        action="store_true",
+        help=(
+            "Run all four canonical (signal, company) pairs in sequence. "
+            "Implies --non-interactive. Prints a summary table at the end."
+        ),
+    )
     parser.add_argument(
         "--no-polish",
         action="store_true",
-        help="Skip the assembler's final Claude voice pass (saves one API call).",
+        help="Skip the assembler's final Claude voice pass (saves one API call per signal).",
     )
     parser.add_argument(
         "--sdr-signature",
@@ -58,7 +108,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument(
         "--non-interactive",
         action="store_true",
-        help="Skip the HITL prompt; auto-treat as 'send'. For smoke tests.",
+        help="Skip the HITL prompt; auto-treat as 'send'. Always on under --all.",
     )
     parser.add_argument(
         "--verbose",
@@ -68,17 +118,71 @@ def main(argv: list[str] | None = None) -> int:
     )
     args = parser.parse_args(argv)
 
+    if args.run_all:
+        if args.signal or args.company:
+            parser.error("--all is mutually exclusive with --signal / --company.")
+        args.non_interactive = True  # batch mode never prompts
+    else:
+        if not args.signal or not args.company:
+            parser.error("Either pass --all, or pass both --signal and --company.")
+
     # override=True so a value in .env wins over an empty ANTHROPIC_API_KEY
     # that some shells / launchers export by default.
     load_dotenv(override=True)
     _configure_logging(verbose=args.verbose)
 
+    if args.run_all:
+        return _run_all(args)
+    _run_single(args.signal, args.company, args)
+    return 0
+
+
+def _run_all(args: argparse.Namespace) -> int:
+    """Iterate the canonical pairs, collect results, print a summary table."""
+    results: list[_RunResult] = []
+    for idx, (signal_type, company_id) in enumerate(_ALL_PAIRS, start=1):
+        print()
+        print(_BANNER)
+        print(f" BATCH {idx}/{len(_ALL_PAIRS)}  {signal_type} @ {company_id}")
+        print(_BANNER)
+        result = _run_single(signal_type, company_id, args)
+        results.append(result)
+
+    print()
+    print(_BANNER)
+    print(" BATCH SUMMARY")
+    print(_BANNER)
+    print(f"{'signal':<18} {'company':<8} {'tier':<10} {'gate':<10} {'outcome'}")
+    print("─" * 60)
+    drafted = 0
+    for r in results:
+        gate_str = f"{r.candidates_passed}/{r.candidates_total}" if r.candidates_total else "—"
+        if r.outcome == "draft sent":
+            drafted += 1
+        print(
+            f"{r.signal_type:<18} {r.company_id:<8} {r.tier:<10} {gate_str:<10} {r.outcome}"
+        )
+    print()
+    print(f"{drafted}/{len(results)} signals produced drafts.")
+    audits = [str(r.audit_path) for r in results if r.audit_path]
+    print(f"Audit files written: {len(audits)}")
+    for a in audits:
+        print(f"  {a}")
+    return 0
+
+
+def _run_single(
+    signal_type: str,
+    company_id: str,
+    args: argparse.Namespace,
+) -> _RunResult:
+    """Run one (signal, company) pair end-to-end. Returns a summary record."""
     started_at = datetime.now(UTC)
     run_id = started_at.strftime("%Y%m%dT%H%M%SZ")
 
     # --- Stage 1 ---------------------------------------------------------
-    print(f"[1/5] Detecting signal: {args.signal} @ {args.company}...")
-    signal = detector.detect(args.signal, args.company)
+    print(f"[1/5] Detecting signal: {signal_type} @ {company_id}...")
+    signal = detector.detect(signal_type, company_id)
     print(
         f"      {signal.signal_id} ({signal.signal_source}, "
         f"fired {signal.signal_date.isoformat()})"
@@ -127,8 +231,18 @@ def main(argv: list[str] | None = None) -> int:
             f"      tier={tier} → no draft generated. "
             "Production would fire Find Contacts at Company or park the lead."
         )
-        _finalise_and_write(audit)
-        return 0
+        audit_path = _finalise_and_write(audit)
+        return _RunResult(
+            signal_type=signal_type,
+            company_id=company_id,
+            tier=tier,
+            candidates_total=0,
+            candidates_passed=0,
+            draft_subject="",
+            sdr_decision="",
+            audit_path=audit_path,
+            outcome=tier.lower(),
+        )
 
     # --- Stage 5 ---------------------------------------------------------
     print("[5/5] Drafting via Claude API...")
@@ -145,12 +259,24 @@ def main(argv: list[str] | None = None) -> int:
         marker = "✓" if verdict.passed else "✗"
         print(f"        [{idx}] {marker} {verdict.reason}")
 
+    passed_count = sum(1 for v in verdicts if v.passed)
+
     if chosen is None:
         print("      All candidates failed gate. Routing to manual review queue.")
         print("      # STUB: would create a ticket in #signal-manual-review")
         audit.gate_decision = {"passed": False, "reason": "no candidate cleared the gate"}
-        _finalise_and_write(audit)
-        return 0
+        audit_path = _finalise_and_write(audit)
+        return _RunResult(
+            signal_type=signal_type,
+            company_id=company_id,
+            tier=tier,
+            candidates_total=len(candidates),
+            candidates_passed=passed_count,
+            draft_subject="",
+            sdr_decision="",
+            audit_path=audit_path,
+            outcome="manual review",
+        )
 
     selected_idx = verdicts.index(chosen) + 1
     print(f"      Selected hook: candidate {selected_idx}")
@@ -184,7 +310,7 @@ def main(argv: list[str] | None = None) -> int:
     audit.sdr_decision = decision
     audit.sdr_edited_body = final_body
 
-    campaign = SMARTLEAD_CAMPAIGNS.get(args.signal, "(unknown)")
+    campaign = SMARTLEAD_CAMPAIGNS.get(signal_type, "(unknown)")
     if decision == "send":
         print(
             f"[STUB] Would have triggered Smartlead campaign {campaign!r} "
@@ -197,8 +323,18 @@ def main(argv: list[str] | None = None) -> int:
     else:
         print("[STUB] Skipped. Production would decay the signal and capture a reason.")
 
-    _finalise_and_write(audit)
-    return 0
+    audit_path = _finalise_and_write(audit)
+    return _RunResult(
+        signal_type=signal_type,
+        company_id=company_id,
+        tier=tier,
+        candidates_total=len(candidates),
+        candidates_passed=passed_count,
+        draft_subject=draft.subject,
+        sdr_decision=decision,
+        audit_path=audit_path,
+        outcome="draft sent" if decision in {"send", "edit"} else "skipped",
+    )
 
 
 def _record_score(audit: AuditEntry, score: ScoreBreakdown) -> None:
@@ -234,11 +370,12 @@ def _record_hooks(
     ]
 
 
-def _finalise_and_write(audit: AuditEntry) -> None:
-    """Stamp completed_at, write the audit JSON, and tell the user where it landed."""
+def _finalise_and_write(audit: AuditEntry) -> Path:
+    """Stamp completed_at, write the audit JSON, print the path, return it."""
     audit.completed_at = datetime.now(UTC)
     path = auditor.write(audit)
     print(f"[AUDIT] {path}")
+    return path
 
 
 def _print_draft_noninteractive(draft: Draft) -> None:
