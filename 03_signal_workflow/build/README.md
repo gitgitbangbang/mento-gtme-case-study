@@ -36,7 +36,9 @@ For the path-to-production view — exactly which functions get swapped, what th
 ## What The Reviewer Sees
 
 ```bash
-$ uv run python -m signal_engine.run --api-key sk-ant-... --signal funding --company linear
+$ uv run python -m signal_engine.run \
+    --api-key sk-ant-... \
+    --signal funding --company linear --non-interactive
 
 [1/5] Detecting signal: funding @ linear...
       sig_linear_funding_2026_05_10 (crunchbase, fired 2026-05-10)
@@ -150,11 +152,17 @@ uv run pytest -q
 
 ### Step 6 — Run one signal end-to-end against the live Claude API
 
-Replace `YOUR_KEY_HERE` with the key you copied in Step 3, then paste the whole line:
+Replace `YOUR_KEY_HERE` with the key you copied in Step 3, then **select the entire block (all five lines including the trailing backslashes) and paste**:
 
 ```bash
-uv run python -m signal_engine.run --api-key YOUR_KEY_HERE --signal exec_hire --company vanta --non-interactive
+uv run python -m signal_engine.run \
+    --api-key YOUR_KEY_HERE \
+    --signal exec_hire \
+    --company vanta \
+    --non-interactive
 ```
+
+The trailing `\` on each line is shell line-continuation — zsh and bash treat the whole block as one command even though it's visually multi-line. If you paste only the first line, the shell will complain it's missing `--signal` and `--company`.
 
 **Plain English.** This is the demo. Walks Vanta's new CHRO hire (Sarah Chen, ex-Coda VP People, scaled that team 80→600) all the way through the five-stage pipeline: detection → enrichment → scoring → routing → AI drafting. Makes five real calls to Claude (one to generate three hook candidates, three to evaluate them, one to polish the final draft). Roughly ~$0.10 in API spend per run on your Anthropic account.
 
@@ -182,7 +190,10 @@ uv run python -m signal_engine.run --api-key YOUR_KEY_HERE --signal exec_hire --
 Same key from Step 3, replace `YOUR_KEY_HERE` again:
 
 ```bash
-uv run python -m signal_engine.run --api-key YOUR_KEY_HERE --all --non-interactive
+uv run python -m signal_engine.run \
+    --api-key YOUR_KEY_HERE \
+    --all \
+    --non-interactive
 ```
 
 **Plain English.** Cycles through all four canonical signal/company pairs: funding/linear, exec_hire/vanta, ld_posting/ramp, headcount_growth/retool. `--all` implies `--non-interactive`. About 60 seconds and ~$0.40 in API spend per invocation.
@@ -240,9 +251,17 @@ Available companies: `linear`, `vanta`, `ramp`, `retool`.
 Replace `YOUR_KEY_HERE` with your key on each command:
 
 ```bash
-uv run python -m signal_engine.run --api-key YOUR_KEY_HERE --signal funding --company linear
-uv run python -m signal_engine.run --api-key YOUR_KEY_HERE --signal ld_posting --company ramp
-uv run python -m signal_engine.run --api-key YOUR_KEY_HERE --signal headcount_growth --company retool
+uv run python -m signal_engine.run \
+    --api-key YOUR_KEY_HERE \
+    --signal funding --company linear --non-interactive
+
+uv run python -m signal_engine.run \
+    --api-key YOUR_KEY_HERE \
+    --signal ld_posting --company ramp --non-interactive
+
+uv run python -m signal_engine.run \
+    --api-key YOUR_KEY_HERE \
+    --signal headcount_growth --company retool --non-interactive
 ```
 
 Each produces a different tier (Linear=P1, Vanta=P2, Ramp=P2, Retool=P3) so you can see routing diverge in practice. Captured example outputs from a recent live run sit in [`examples/`](./examples/).
