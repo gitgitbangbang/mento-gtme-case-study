@@ -70,9 +70,3 @@ uv run python -m signal_engine.run --signal funding --company linear
 ```
 
 See `03_signal_workflow/build/README.md` for the full breakdown and a 7-step verification walkthrough.
-
-## Engagement Model Mapping
-
-- Part 1 + Part 2 plan = Consultancy
-- Part 2 Clay = Done-For-You
-- Part 3 engine = Hybrid
